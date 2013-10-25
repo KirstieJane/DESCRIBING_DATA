@@ -190,9 +190,9 @@ def load_data(arguments):
     bg_data[bg_data < 0.06] = 0
     stats_data[bg_data < 0.06] = 0
     
-	# Now also save the pixel dimensions
-	zooms = bg_img.get_header().get_zooms()
-	
+    # Now also save the pixel dimensions
+    zooms = bg_img.get_header().get_zooms()
+
     return bg_data, stats_data, zooms
     
 def create_test_data():
