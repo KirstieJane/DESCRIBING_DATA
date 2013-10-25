@@ -1,10 +1,31 @@
 #!/usr/bin/env python
 
 '''
-This code allows you to make png images of all the slices
-in a 3D volume (sagittal, axial and coronal).
+This code allows you to make png images of a stats image on top of a background
+image for all the slices in a 3D volume (sagittal, axial and coronal).
 
+positional arguments:
+  bg_fname              File name for background .nii.gz image
+  stats_fname           File name for stats .nii.gz image
+  output_dirname        Output directory for .png images
 
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --verbose         Print verbose updates of each step to the screen
+  -cm colormap, --colormap colormap
+                        Colormap used to plot stats data. Default is autumn.
+                        See wiki.scipy.org/Cookbook/Matplotlib/Show_colormaps
+                        for all possible colormaps
+  -tc1 textcolor_mni, --textcolor_mni textcolor_mni
+                        Color for coordinate text information. Default is
+                        black. Enter "none" to leave blank
+  -tc2 textcolor_R, --textcolor_R textcolor_R
+                        Color for side indicator (R) on axial slices. Default
+                        is black. Enter "none" to leave blank
+  -tr, --transparency   Make background transparent. Default is black
+  -c crop_option, --crop_option crop_option
+                        Choose to crop either the background image, or the
+                        stats image. Default is background
 
 Created on: 29th August 2013
 Created by: Kirstie Whitaker
@@ -209,12 +230,7 @@ def create_test_data():
     
     bg = bg/1.
     bg = bg/np.max(bg)
-    
-    #stats = np.random.random(bg.shape)
-    #from scipy import ndimage
-    #stats = ndimage.gaussian_filter(stats, sigma=5)
-    #stats[stats < 0.5] = 0
-    
+
     stats = np.zeros_like(bg)
     stats = stats/1.
     stats[10:15, 10:15, 10:15] = np.random.random([5,5,5])
