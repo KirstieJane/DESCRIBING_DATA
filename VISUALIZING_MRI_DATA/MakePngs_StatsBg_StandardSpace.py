@@ -381,6 +381,9 @@ def make_png(bg_slice, stats_slice,
 
 arguments = setup_argparser() # Read arguments from command line
 
+if not os.path.isdir(arguments.output_dir):     # Make the output directory if
+    os.mkdirs(arguments.output_dir)             # it doesn't already exist
+    
 xyz_dict, mni_func_list = hardcoded_variables() # Define some of the hardcoded
                                                  # variables
 
