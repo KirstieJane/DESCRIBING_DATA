@@ -39,7 +39,10 @@ def plot_bg(png, n):
 
     
 def plot_pngs(i, png, n, w, d):
+    '''
+    This function reads in the counter (i), the png file (png),
     
+    '''
     img = mpimg.imread(png)
 
     if '_-' in png and png.startswith('s'):
@@ -97,8 +100,8 @@ pngs = [ png for png in pngs if '0.png' in png or '5.png' in png ]
 n = len(pngs)/1.
 
 half = np.floor(n/2)
-#pngs = pngs[4:np.int(half)]
-pngs = pngs[2:(-2):2]
+pngs = pngs[4:np.int(half)]
+#    pngs = pngs[2:(-2):2]
 
 png_name = 'combined_{}_{}_to_{}.png'.format(pngs[0].split('_')[0],
                                     pngs[-1][-8:-4],
