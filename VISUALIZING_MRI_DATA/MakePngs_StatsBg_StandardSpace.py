@@ -387,7 +387,7 @@ bg, stats = load_data(arguments) # Load data
 
 xyz_dict['shape'] = bg.shape # Add shape into your xyz_dict
 
-xyz_dict['zooms'] = bg.get_header().get_zooms() # Add voxel dimensions to your xyz_dict
+xyz_dict['zooms'] = bg_img.get_header().get_zooms() # Add voxel dimensions to your xyz_dict
 
 bg_cropped, stats_cropped, slices_list = crop_data(bg, stats)
                                               # Crop data (but keep slice_ids)
