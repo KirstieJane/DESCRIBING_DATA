@@ -190,7 +190,10 @@ def load_data(arguments):
     bg_data[bg_data < 0.06] = 0
     stats_data[bg_data < 0.06] = 0
     
-    return bg_data, stats_data
+	# Now also save the pixel dimensions
+	zooms = bg_img.get_header().get_zooms()
+	
+    return bg_data, stats_data, zooms
     
 def create_test_data():
     bg = np.tile(np.arange(40), (40, 40, 1)).T
@@ -381,13 +384,13 @@ arguments = setup_argparser() # Read arguments from command line
 xyz_dict, mni_func_list = hardcoded_variables() # Define some of the hardcoded
                                                  # variables
 
-bg, stats = load_data(arguments) # Load data
+bg, stats, zooms = load_data(arguments) # Load data
 
 #bg, stats = create_test_data() # Use test data
 
 xyz_dict['shape'] = bg.shape # Add shape into your xyz_dict
 
-xyz_dict['zooms'] = bg_img.get_header().get_zooms() # Add voxel dimensions to your xyz_dict
+xyz_dict['zooms'] = zooms # Add voxel dimensions to your xyz_dict
 
 bg_cropped, stats_cropped, slices_list = crop_data(bg, stats)
                                               # Crop data (but keep slice_ids)
