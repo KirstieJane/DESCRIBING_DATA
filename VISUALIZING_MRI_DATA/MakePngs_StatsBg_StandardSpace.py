@@ -132,7 +132,7 @@ def setup_argparser():
     
     arguments = parser.parse_args()
     
-    return arguments
+    return arguments, parser
 
 def hardcoded_variables():
     # The xyz_dict is a dictionary that allows us to loop through the dimensions
@@ -164,10 +164,11 @@ def hardcoded_variables():
 
     return xyz_dict, mni_func_list
 
-def load_data(arguments):
+def load_data(arguments, parser):
     '''
     READ IN THE DATA
     and check that the two files are the same size
+    
     '''
     try:
         bg_img = nib.load(arguments.background_file)
@@ -395,7 +396,7 @@ def make_png(bg_slice, stats_slice,
 #==============================================================================
 # NOW THE FUN BEGINS
 
-arguments = setup_argparser() # Read arguments from command line
+arguments, parser = setup_argparser() # Read arguments from command line
 
 if not os.path.isdir(arguments.output_dir):     # Make the output directory if
     os.makedirs(arguments.output_dir)             # it doesn't already exist
@@ -403,7 +404,7 @@ if not os.path.isdir(arguments.output_dir):     # Make the output directory if
 xyz_dict, mni_func_list = hardcoded_variables() # Define some of the hardcoded
                                                  # variables
 
-bg, stats, zooms = load_data(arguments) # Load data
+bg, stats, zooms = load_data(arguments, parser) # Load data
 
 #bg, stats = create_test_data() # Use test data
 
