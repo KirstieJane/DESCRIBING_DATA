@@ -36,6 +36,7 @@ Created by: Kirstie Whitaker
 # IMPORT WHAT YOU NEED
 import numpy as np
 import matplotlib.pylab as plt
+import matplotlib as mpl
 import os
 import sys
 import nibabel as nib
@@ -80,9 +81,15 @@ def setup_argparser():
     
     # Optional argument: verbosity
     parser.add_argument('-v', '--verbose',
-                            dest='verbosity',
+                            dest='verbose',
                             action='store_true',
                             help='Print verbose updates of each step to the screen')
+                            
+    # Optional argument: use_specificcolors
+    parser.add_argument('-oc', '--use_specificcolors',
+                            dest='use_specificcolors',
+                            action='store_true',
+                            help='Ignore the colormap and generate one from a list of colors')
     
     # Optional argument: colormap
     #       default: autumn
@@ -94,6 +101,17 @@ def setup_argparser():
                             help= ('Colormap used to plot stats data. Default is autumn. '
                                     + 'See wiki.scipy.org/Cookbook/Matplotlib/Show_colormaps '
                                     + 'for all possible colormaps') )
+                                    
+    # Optional argument: colorlist
+    #       default: blue
+    parser.add_argument('-c', '--colorlist',
+                            dest='colorlist',
+                            type=str,
+                            nargs='+',
+                            default='blue',
+                            metavar='colorlist',
+                            help= ('One color for every integer value in the stats file.'
+                                    + 'Default is blue.') )
     
     # Optional argument: textcolor_mni
     #       default: black
@@ -114,7 +132,7 @@ def setup_argparser():
                             help='Color for side indicator (R) on axial slices. Default is black. Enter "none" to leave blank')
     
     # Optional argument: transparency
-    #       default: True
+    #       default: False
     parser.add_argument('-tr', '--transparency',
                             dest='transparency',
                             action='store_true',
@@ -122,7 +140,7 @@ def setup_argparser():
     
     # Optional argument: crop_option
     #       default: background
-    parser.add_argument('-c', '--crop_option',
+    parser.add_argument('-cr', '--crop_option',
                             dest='crop_option',
                             type=str,
                             default='background',
@@ -216,7 +234,16 @@ def load_data(arguments, parser):
     zooms = bg_img.get_header().get_zooms()
 
     return bg_data, stats_data, zooms
-    
+
+def create_colormap(arguments):
+    # make a color map of fixed colors given in the arguments
+    cmap = mpl.colors.ListedColormap(arguments.colorlist)
+    bounds = np.linspace(0,1,len(arguments.colorlist)+1)
+    norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+
+    arguments.colormap = cmap
+    return arguments, cmap
+
 def create_test_data():
     bg = np.tile(np.arange(40), (40, 40, 1)).T
     bg = bg + np.arange(40)
@@ -295,8 +322,11 @@ def rotate_data(bg, stats, slices_list, axis_name, shape):
     # Rotate the data as required
     # Return the rotated data, and an updated slice list if necessary
     if axis_name == 'axial':
+        # Align so that right is right
         stats = np.rot90(stats)
+        stats = np.fliplr(stats)
         bg = np.rot90(bg)
+        bg = np.fliplr(bg)
     
     elif axis_name == 'coronal':
         stats = np.rot90(stats)
@@ -363,20 +393,20 @@ def make_png(bg_slice, stats_slice,
     # it makes the brain look nicer :)
     CS = plt.contour(bg_slice, [0.06, 1], linewidths=3, colors='k')
 
-    # Put a text box in the bottom right corner with the
+    # Put a text box in the bottom center of the picture with the
     # slice number in MNI space
-    text = ax.text(0.99, 0.01 , mni_text,
-        horizontalalignment='right',
+    text = ax.text(0.5, 0.01 , mni_text,
+        horizontalalignment='center',
         verticalalignment='bottom',
         transform=ax.transAxes,
         color = arguments.textcolor_mni)
     
-    # Put a little "R" in the bottom right corner if you're making
-    # axial slices
+    # Put a little "R" in the middle right side of the image 
+    # if you're making axial slices
     if axis_name == 'axial':
-        text = ax.text(0.01, 0.01 , 'R',
-        horizontalalignment='left',
-        verticalalignment='bottom',
+        text = ax.text(0.99, 0.5 , 'R',
+        horizontalalignment='right',
+        verticalalignment='center',
         transform=ax.transAxes,
         color = arguments.textcolor_R)
     
@@ -415,6 +445,9 @@ xyz_dict['zooms'] = zooms # Add voxel dimensions to your xyz_dict
 bg_cropped, stats_cropped, slices_list = crop_data(bg, stats)
                                               # Crop data (but keep slice_ids)
 
+if arguments.use_specificcolors:
+    arguments, cmap = create_colormap(arguments) # Update the colormap if necessary    
+
 # Loop through the three axes
 for axis_id in range(3):  
     
@@ -431,7 +464,7 @@ for axis_id in range(3):
     
     # Loop through the slices
     for slice_id, slice_n in enumerate(slices_list[axis_id]):
-        
+
         mni = mni_func_list[axis_id](xyz_dict['mni_const'][axis_id], slice_n, xyz_dict['zooms'][axis_id])
 
         mni_text = '{} = {}'.format(xyz_dict['letter'][axis_id], mni)
