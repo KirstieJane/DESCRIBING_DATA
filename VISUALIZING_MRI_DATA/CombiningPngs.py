@@ -39,10 +39,11 @@ def setup_argparser():
                             metavar='png_dir',
                             help='Directory that contains the png files')
     
-    # Required argument: png_list
-    parser.add_argument(dest='png_list', 
+    # Optional argument: png_file
+    parser.add_argument('-f', '--png_file_list',
+                            dest='png_file_list', 
                             type=str,
-                            metavar='png_list',
+                            metavar='png_file_list',
                             help='File containing a list of png names')
 
     # Optional argument: transparency
@@ -51,6 +52,14 @@ def setup_argparser():
                             dest='transparency',
                             action='store_true',
                             help='Make background transparent. Default is black')
+    
+    # Optional argument: width_ratio
+    #       default: 1.3
+    parser.add_argument('-wr', '--width_ratio',
+                            dest='width_ratio',
+                            type=float,
+                            default=1.3,
+                            help='Percentage of png overlap')
     
     arguments = parser.parse_args()
     
@@ -166,8 +175,8 @@ arguments, parser = setup_argparser() # Read arguments from command line
 
 # Set the width ration - 1.3
 # I CAN NOT REMEMBER WHAT THIS MEANS BUT IT NEEDS TO GO IN THE ARGUMENTS
-width_ratio = 1.3
-width_ratio = width_ratio/1. # Not necessary if it's stored as float
+#width_ratio = 1.3
+width_ratio = arguments.width_ratio/1. # Not necessary if it's stored as float
 
 
 # -----------------------------------------------------------------------------
@@ -205,8 +214,21 @@ syn_ax_pngs = pngs_0[4:11]
 # Coronal
 #glob_string = ('coronal*png')
 
+combo_list = [ whole_pngs, right_pngs, left_pngs, syn_sag_pngs, syn_ax_pngs ]
 
-for pngs in [ whole_pngs, right_pngs, left_pngs, syn_sag_pngs, syn_ax_pngs ]:
+for l in combo_list:
+    l.sort()
+
+# Custom list
+if arguments.png_file_list:
+    with open(arguments.png_file_list) as f:
+        custom_pngs = f.read().splitlines()
+
+    combo_list = combo_list + [custom_pngs]
+    
+combo_list = [ l for l in combo_list if len(l) > 0 ]
+
+for pngs in combo_list:
     # Calculate the number of pngs you're going to show
     n = len(pngs)/1.
     diff = width_ratio - 1
@@ -216,10 +238,7 @@ for pngs in [ whole_pngs, right_pngs, left_pngs, syn_sag_pngs, syn_ax_pngs ]:
     #========
 
     # I ALSO DON'T KNOW WHAT THIS MEANS
-    backwards=True
-
-    # Sort the pngs (in case they aren't already)
-    pngs.sort()
+    #backwards=True
 
     # Name the output file of the form:
     # combined_<sliceorientation>_<lowest_mni>_<highest_mni>.png

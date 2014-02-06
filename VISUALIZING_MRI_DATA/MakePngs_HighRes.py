@@ -391,22 +391,20 @@ for axis_id in range(3):
     for slice_id, slice_n in enumerate(slices_list[axis_id]):
         
         png_name = '{}_slice_{:04.0f}.png'.format(axis_name, slice_id)
+                
+        if arguments.crop_option == 'overlay':
+            if np.sum(overlay[:,:,slice_id]) > 0:
         
-        if slice_id%10 == 0:
-        
-            if arguments.crop_option == 'overlay':
-                if np.sum(overlay[:,:,slice_id]) > 0:
-            
-                    make_png(bg[:,:,slice_id],       # Make the image ONLY from slices
-                                overlay[:,:,slice_id], # that have overlay data and save 
-                                axis_name,           # in output_directory
-                                png_name,
-                                arguments)
-            else:
-                make_png(bg[:,:,slice_id],       # Make the image from each slice
-                            overlay[:,:,slice_id], # and save in output_directory 
-                            axis_name,
+                make_png(bg[:,:,slice_id],       # Make the image ONLY from slices
+                            overlay[:,:,slice_id], # that have overlay data and save 
+                            axis_name,           # in output_directory
                             png_name,
                             arguments)
+        else:
+            make_png(bg[:,:,slice_id],       # Make the image from each slice
+                        overlay[:,:,slice_id], # and save in output_directory 
+                        axis_name,
+                        png_name,
+                        arguments)
 
 # THE END

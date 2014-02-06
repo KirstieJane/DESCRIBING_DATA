@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-def scatter_interaction(ax, x, y, groups, colors, ms=5, labels=None, title=None, legend=False):
+def scatter_interaction(ax, x, y, groups, colors, ms=5, labels=None, title=None, legend=False, formula='y ~ x'):
     
     # Here are the imports
     import numpy as np
@@ -13,7 +13,7 @@ def scatter_interaction(ax, x, y, groups, colors, ms=5, labels=None, title=None,
 
     # If you haven't already been given an axis on which to plot, then
     # create a new figure
-    
+        
     if not ax:
         fig = plt.figure(figsize = (5,4))
         
@@ -38,10 +38,11 @@ def scatter_interaction(ax, x, y, groups, colors, ms=5, labels=None, title=None,
         #c_x = [np.min(x_i),np.max(x_i)]
         #c_y = [p(np.min(x_i)), p(np.max(x_i))]
 
-        formula = 'y ~ x'
         df2 = pd.DataFrame({ 'x' : x_i, 'y' : y_i })
         df2.sort('x', inplace=True)
         lm = ols(formula, df2).fit()
+        ps = [ '{:2.4f}'.format(p) for p in lm.pvalues[1:] ]
+        print '    r2 = {}, p(s) = {}'.format(lm.rsquared, ', '.join(ps))
         prstd, iv_l, iv_u = wls_prediction_std(lm)
         iv_l = np.array(iv_l)
         iv_u = np.array(iv_u)
@@ -148,7 +149,7 @@ def get_fig(height, layout='one_large_three_small'):
     
     return fig, ax, msizes
 
-def plot_scatter_dtimeasures(df_list, x, y, groups, height, labels, title, plot_colors, grid_layout='one_large_three_small', legend=False):
+def plot_scatter_dtimeasures(df_list, x, y, groups, height, labels, title, plot_colors, grid_layout='one_large_three_small', legend=False, formula='y ~ x'):
     """
     This code takes in a list of pandas data frames, and creates
     four plots - one large and 3 small to the right - one for each of
@@ -190,7 +191,8 @@ def plot_scatter_dtimeasures(df_list, x, y, groups, height, labels, title, plot_
                         colors = plot_colors,
                         labels = [labels[0], labels[i+1]],
                         ms = msizes[i],
-                        legend=legend)
+                        legend=legend,
+                        formula=formula)
 
     if title:
         # Give the figure a title
