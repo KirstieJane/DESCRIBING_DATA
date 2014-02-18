@@ -13,7 +13,7 @@ def create_partial_correlation_matrix(df_list, measures, names, height, group_na
     fig = plt.figure(figsize=(height*len(df_list), height))
 
     # Set a sensible sized font
-    font = { 'size'   : 22 * height/12}
+    font = { 'size'   : 22 * height/18}
     plt.rc('font', **font)
 
     # Make separate plots for the df_lists:
@@ -113,7 +113,7 @@ def create_correlation_matrix(df_list, measures, names, height, group_names_shor
 
     fig = plt.figure(figsize=(height*len(df_list), height))
 
-    font = { 'size'   : 22 * height/12}
+    font = { 'size'   : 22 * height/18}
 
     plt.rc('font', **font)
 
