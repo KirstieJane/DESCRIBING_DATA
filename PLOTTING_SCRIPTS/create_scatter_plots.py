@@ -71,8 +71,13 @@ def scatter_interaction(ax, x, y, groups, colors, ms=5, labels=None, title=None,
 
     # Set the y limits
     # This is to deal with very small numbers (the MaxNLocator gets all turned around!)
-    max_y = np.max(np.concatenate([y[0],y[1]]))
-    min_y = np.min(np.concatenate([y[0],y[1]]))
+    # Concatenate all the y data:
+    y_all = y[0]
+    if len(y) > 1:
+        for k in range(1,len(y)):
+            y_all = np.concatenate([y_all, y[k]])
+    max_y = np.max(y_all)
+    min_y = np.min(y_all)
     buffer = ( max_y - min_y ) / 10
     upper = max_y + buffer
     lower = min_y - buffer
