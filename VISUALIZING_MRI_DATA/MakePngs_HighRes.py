@@ -234,13 +234,13 @@ def crop_data(bg, overlay):
     #---------------------------------------------------------------
     # Pad with zeros for 5 slices on all sides if you're going
     # to get all the slices in the background image
-    bg_cropped = np.pad(bg_cropped, 30, mode='constant')
-    overlay_cropped = np.pad(overlay_cropped, 30, mode='wrap')
+    bg_cropped = np.pad(bg_cropped, 5, mode='constant')
+    overlay_cropped = np.pad(overlay_cropped, 5, mode='wrap')
     
     # Add these slices into the slices_list
     for i, sl in enumerate(slices_list):
-        sl = sl + [ n - 30 for n in sl ]
-        sl = sl + [ n + 30 for n in sl ]
+        sl = sl + [ n - 5 for n in sl ]
+        sl = sl + [ n + 5 for n in sl ]
         slices_list[i] = list(set(sl))
     
     return bg_cropped, overlay_cropped, slices_list
