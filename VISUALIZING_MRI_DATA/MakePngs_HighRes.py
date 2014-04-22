@@ -325,7 +325,7 @@ def make_png(bg_slice, overlay_slice,
                
     # Add a black line around the edge of the background image
     # it makes the brain look nicer :)
-    CS = plt.contour(overlay_slice, [0.06, 1], linewidths=3, colors='k')
+    CS = plt.contour(overlay_slice, [0.01, 1], linewidths=3, colors='k')
          
     # Put a little "R" in the middle right side of the image 
     # if you're making axial slices
@@ -383,7 +383,7 @@ for axis_id in range(3):
     
     bg, overlay, slices_list = rotate_data(bg_cropped, # Rotate the data so your
                                     overlay_cropped,   # axis of interest is last 
-                                    slices_list,     # and the slices look good
+                                    slices_list,       # and the slices look good
                                     axis_name,
                                     shape)
     
@@ -395,9 +395,9 @@ for axis_id in range(3):
         if arguments.crop_option == 'overlay':
             if np.sum(overlay[:,:,slice_id]) > 0:
         
-                make_png(bg[:,:,slice_id],       # Make the image ONLY from slices
+                make_png(bg[:,:,slice_id],         # Make the image ONLY from slices
                             overlay[:,:,slice_id], # that have overlay data and save 
-                            axis_name,           # in output_directory
+                            axis_name,             # in output_directory
                             png_name,
                             arguments)
         else:
