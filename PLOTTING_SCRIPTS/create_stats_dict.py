@@ -54,25 +54,26 @@ def create_stats_dict(df, group_var, continuous_measures=None, discrete_measures
             # and equal means
             
             values = [ g.values for n, g in grouped[measure] ]
-    
-            values[0] = [ x for x in values[0] if not np.isnan(x) ]
-            values[1] = [ x for x in values[1] if not np.isnan(x) ]
-    
-            # Conduct test for equal variance
-            key = '_'.join([measure, 'eq_var'])
-            stats_dict[key] = bartlett(values[0], values[1])
-            
-            # When you test for equal means (ttest) you have different options
-            # depending on if you have equal variances or not
-            if stats_dict[key][1] < 0.05:
-                # Conduct Welch's t-test (unequal variances)
-                key = '_'.join([measure, 'eq_means'])        
-                stats_dict[key] = ttest_ind(values[1], values[0], equal_var = False)
-            
-            else:
-                # Conduct standard t-test (equal variances)
-                key = '_'.join([measure, 'eq_means'])        
-                stats_dict[key] = ttest_ind(values[1], values[0], equal_var = True)
+            if len(values) == 2:
+
+                values[0] = [ x for x in values[0] if not np.isnan(x) ]
+                values[1] = [ x for x in values[1] if not np.isnan(x) ]
+        
+                # Conduct test for equal variance
+                key = '_'.join([measure, 'eq_var'])
+                stats_dict[key] = bartlett(values[0], values[1])
+                
+                # When you test for equal means (ttest) you have different options
+                # depending on if you have equal variances or not
+                if stats_dict[key][1] < 0.05:
+                    # Conduct Welch's t-test (unequal variances)
+                    key = '_'.join([measure, 'eq_means'])        
+                    stats_dict[key] = ttest_ind(values[1], values[0], equal_var = False)
+                
+                else:
+                    # Conduct standard t-test (equal variances)
+                    key = '_'.join([measure, 'eq_means'])        
+                    stats_dict[key] = ttest_ind(values[1], values[0], equal_var = True)
             
         # PAIRWISE CORRELATIONS
         if continuous_measures:
