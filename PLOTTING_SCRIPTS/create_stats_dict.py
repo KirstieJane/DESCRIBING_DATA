@@ -29,12 +29,13 @@ def create_stats_dict(df, group_var, continuous_measures=None, discrete_measures
             key = '_'.join([group_var, measure, 'n'])
             stats_dict[key] = grouped_again[measure].count().values[:]
             
-            # Now calculate the Fisher's exact test on this contingency table
-            n_array = np.array(grouped_again[measure].count()).reshape([2,2])
-            
-            key = '_'.join([group_var, measure, 'fisher'])
-            stats_dict[key] = fisher_exact(n_array)
-                   
+            if not np.all([grouped_again.shape.values[:] == grouped.shape.values[:]]):
+                # Now calculate the Fisher's exact test on this contingency table
+                n_array = np.array(grouped_again[measure].count()).reshape([2,2])
+                
+                key = '_'.join([group_var, measure, 'fisher'])
+                stats_dict[key] = fisher_exact(n_array)
+               
     # Loop through the continuous measures
     if continuous_measures:
         for measure in continuous_measures:
