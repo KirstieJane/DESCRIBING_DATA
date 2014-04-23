@@ -31,26 +31,28 @@ def make_table_group_compare(df, group_var, stats_dict, group_names_long, contin
         for measure, labels in zip(discrete_measures[0], discrete_measures[1]):
             grouped_again = df.groupby([group_var, measure])
             
-            (n0_0, n0_1, n1_0, n1_1), (odr, p ) = ( stats_dict['_'.join([group_var, measure, 'n'])][:],
-                                                    stats_dict['_'.join([group_var, measure, 'fisher'])] )
-            
-            symbol = '='
-            if p < 0.001:
-                symbol, p = '<', 0.001
-            
-            row_text = [ measure, '{:1.0f} {} vs {:1.0f} {}'.format(n1_0, labels[0], n1_1, labels[1]),
-                                  '{:1.0f} {} vs {:1.0f} {}'.format(n0_0, labels[0], n0_1, labels[1]),
-                                  'or = {:2.2f}, p {} {:1.3f}'.format( odr, symbol, p ) ]
-            x.add_row(row_text)
-            table_list.append('\t'.join(row_text))
+            if len(np.array(grouped_again[measure].count())) == 4:
 
-            if (n0_all + n1_all) <> (n0_0 + n0_1 + n1_0 + n1_1):
-                row_text = [ '','{} missing'.format((n1_all - n1_0 - n1_1)),'{} missing'.format((n0_all - n0_0 - n0_1)),'']
-
-                x.add_row(row_text)
+                (n0_0, n0_1, n1_0, n1_1), (odr, p ) = ( stats_dict['_'.join([group_var, measure, 'n'])][:],
+                                                        stats_dict['_'.join([group_var, measure, 'fisher'])] )
                 
+                symbol = '='
+                if p < 0.001:
+                    symbol, p = '<', 0.001
+                
+                row_text = [ measure, '{:1.0f} {} vs {:1.0f} {}'.format(n1_0, labels[0], n1_1, labels[1]),
+                                      '{:1.0f} {} vs {:1.0f} {}'.format(n0_0, labels[0], n0_1, labels[1]),
+                                      'or = {:2.2f}, p {} {:1.3f}'.format( odr, symbol, p ) ]
+                x.add_row(row_text)
                 table_list.append('\t'.join(row_text))
-            x.add_row(empty_row)
+
+                if (n0_all + n1_all) <> (n0_0 + n0_1 + n1_0 + n1_1):
+                    row_text = [ '','{} missing'.format((n1_all - n1_0 - n1_1)),'{} missing'.format((n0_all - n0_0 - n0_1)),'']
+
+                    x.add_row(row_text)
+                    
+                    table_list.append('\t'.join(row_text))
+                x.add_row(empty_row)
 
     if continuous_measures:
         for measure in continuous_measures:
