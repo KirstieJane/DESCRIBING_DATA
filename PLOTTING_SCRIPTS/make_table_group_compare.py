@@ -56,7 +56,7 @@ def make_table_group_compare(df, group_var, stats_dict, group_names_long, contin
 
     if continuous_measures:
         for measure in continuous_measures:
-            ((mean0, mean1), (std0, std1),
+            ((mean1, mean0), (std1, std0),
                 (n0, n1), (mean_t, mean_p),
                 (var_t, var_p) ) = ( stats_dict['_'.join([measure, 'mean'])],
                                                 stats_dict['_'.join([measure, 'std'])],
@@ -68,11 +68,11 @@ def make_table_group_compare(df, group_var, stats_dict, group_names_long, contin
             symbol = '='
             if mean_p < 0.001:
                 symbol, mean_p = '<', 0.001
-            row_text = [ measure, '{:2.3g}({:2.3g})'.format(mean0, std0),
-                                '{:2.3g}({:2.3g})'.format(mean1, std1),
+            row_text = [ measure, '{:2.3g} ({:2.3g})'.format(mean0, std0),
+                                '{:2.3g} ({:2.3g})'.format(mean1, std1),
                                 't({:1.0f}) = {:2.3g}, p {} {:2.3g}'.format(df,np.float(mean_t), symbol, mean_p)]
             x.add_row(row_text)
-            double_row_text = row_text
+            table_list.append('\t'.join(row_text)) 
 
             symbol = '='
             if var_p < 0.05:
@@ -90,9 +90,7 @@ def make_table_group_compare(df, group_var, stats_dict, group_names_long, contin
             if var_p < 0.05 or n0 != n0_all or n1 != n1_all:
                 row_text = [ '',missing_text[0], missing_text[1], uneq_var_text[0]]
                 x.add_row([ '',missing_text[0], missing_text[1], uneq_var_text[0]])
-                double_row_text = double_row_text + row_text
-
-            table_list.append('\t'.join(double_row_text))
+                table_list.append('\t'.join(row_text)) 
 
             x.add_row(empty_row)
        
