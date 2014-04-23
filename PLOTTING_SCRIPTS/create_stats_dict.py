@@ -29,7 +29,7 @@ def create_stats_dict(df, group_var, continuous_measures=None, discrete_measures
             key = '_'.join([group_var, measure, 'n'])
             stats_dict[key] = grouped_again[measure].count().values[:]
             
-            if not np.all([grouped_again.shape.values[:] == grouped.shape.values[:]]):
+            if len(np.array(grouped_again[measure].count())) == 4:
                 # Now calculate the Fisher's exact test on this contingency table
                 n_array = np.array(grouped_again[measure].count()).reshape([2,2])
                 
@@ -105,75 +105,85 @@ def create_stats_dict(df, group_var, continuous_measures=None, discrete_measures
                     grouped_discrete = df.groupby(discrete)
                     
                     values = [ g.values for n, g in grouped_discrete[a] ]
-    
-                    values[0] = [ x for x in values[0] if not np.isnan(x) ]
-                    values[1] = [ x for x in values[1] if not np.isnan(x) ]
-    
-                    # Conduct test for equal variance
-                    key = '_'.join([group_var, 'all', discrete, a, 'eq_var'])
-                    stats_dict[key] = bartlett(values[0], values[1])
-                    
-                    # When you test for equal means (ttest) you have different options
-                    # depending on if you have equal variances or not
-                    if stats_dict[key][1] < 0.05:
-                        # Conduct Welch's t-test (unequal variances)
-                        key = '_'.join([group_var, 'all', discrete, a, 'eq_means'])        
-                        stats_dict[key] = ttest_ind(values[1], values[0], equal_var = False)
-                    
-                    else:
-                        # Conduct standard t-test (equal variances)
-                        key = '_'.join([group_var, 'all', discrete, a, 'eq_means'])        
-                        stats_dict[key] = ttest_ind(values[1], values[0], equal_var = True)
-                    
-                    # Next look at the two groups separately:
-                    for name, group in grouped:
-                        grouped_discrete = group.groupby(discrete)
-                        
-                        values = [ g.values for n, g in grouped_discrete[a] ]
-        
+
+                    if len(values) == 2:
+
                         values[0] = [ x for x in values[0] if not np.isnan(x) ]
                         values[1] = [ x for x in values[1] if not np.isnan(x) ]
         
                         # Conduct test for equal variance
-                        key = '_'.join([group_var, str(name), discrete, a, 'eq_var'])
+                        key = '_'.join([group_var, 'all', discrete, a, 'eq_var'])
                         stats_dict[key] = bartlett(values[0], values[1])
                         
                         # When you test for equal means (ttest) you have different options
                         # depending on if you have equal variances or not
                         if stats_dict[key][1] < 0.05:
                             # Conduct Welch's t-test (unequal variances)
-                            key = '_'.join([group_var, str(name), discrete, a, 'eq_means'])        
+                            key = '_'.join([group_var, 'all', discrete, a, 'eq_means'])        
                             stats_dict[key] = ttest_ind(values[1], values[0], equal_var = False)
                         
                         else:
                             # Conduct standard t-test (equal variances)
-                            key = '_'.join([group_var, str(name), discrete, a, 'eq_means'])        
+                            key = '_'.join([group_var, 'all', discrete, a, 'eq_means'])        
                             stats_dict[key] = ttest_ind(values[1], values[0], equal_var = True)
+                    
+                    # Next look at the two groups separately:
+                    for name, group in grouped:
+                        grouped_discrete = group.groupby(discrete)
+                                                
+                        values = [ g.values for n, g in grouped_discrete[a] ]
+                        
+                        if len(values) == 2:
+                            
+                            values[0] = [ x for x in values[0] if not np.isnan(x) ]
+                            values[1] = [ x for x in values[1] if not np.isnan(x) ]
+            
+                            # Conduct test for equal variance
+                            key = '_'.join([group_var, str(name), discrete, a, 'eq_var'])
+                            stats_dict[key] = bartlett(values[0], values[1])
+                            
+                            # When you test for equal means (ttest) you have different options
+                            # depending on if you have equal variances or not
+                            if stats_dict[key][1] < 0.05:
+                                # Conduct Welch's t-test (unequal variances)
+                                key = '_'.join([group_var, str(name), discrete, a, 'eq_means'])        
+                                stats_dict[key] = ttest_ind(values[1], values[0], equal_var = False)
+                            
+                            else:
+                                # Conduct standard t-test (equal variances)
+                                key = '_'.join([group_var, str(name), discrete, a, 'eq_means'])        
+                                stats_dict[key] = ttest_ind(values[1], values[0], equal_var = True)
 
         if discrete_measures:
             if len(discrete_measures) > 1:
                 for a, b in it.combinations(discrete_measures[0], 2):
                     # Look first at the whole group
                     grouped_again = df.groupby([a,b])
-                    key = '_'.join([group_var, 'all', a, b, 'n'])
-                    stats_dict[key] = grouped_again[b].count().values[:]
                     
-                    # Now calculate the Fisher's exact test on this contingency table
-                    n_array = np.array(grouped_again[b].count()).reshape([2,2])
-                
-                    key = '_'.join([group_var, 'all', a, b, 'fisher'])
-                    stats_dict[key] = fisher_exact(n_array)
-    
-                    # Now loop through the two groups separately
-                    for name, group in grouped:
-                        grouped_again = group.groupby([a,b])
+                    if len(np.array(grouped_again[b].count())) == 4:
+                    
                         key = '_'.join([group_var, 'all', a, b, 'n'])
                         stats_dict[key] = grouped_again[b].count().values[:]
                         
                         # Now calculate the Fisher's exact test on this contingency table
                         n_array = np.array(grouped_again[b].count()).reshape([2,2])
-                        
+                    
                         key = '_'.join([group_var, 'all', a, b, 'fisher'])
                         stats_dict[key] = fisher_exact(n_array)
+        
+                        # Now loop through the two groups separately
+                        for name, group in grouped:
+                            grouped_again = group.groupby([a,b])
+                            
+                            if len(np.array(grouped_again[b].count())) == 4:
+                                
+                                key = '_'.join([group_var, 'all', a, b, 'n'])
+                                stats_dict[key] = grouped_again[b].count().values[:]
+                                
+                                # Now calculate the Fisher's exact test on this contingency table
+                                n_array = np.array(grouped_again[b].count()).reshape([2,2])
+                                
+                                key = '_'.join([group_var, 'all', a, b, 'fisher'])
+                                stats_dict[key] = fisher_exact(n_array)
                     
     return stats_dict
