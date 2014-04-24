@@ -132,6 +132,13 @@ def setup_argparser():
                             action='store_true',
                             help='Make background transparent. Default is black')
     
+    # Optional argument: axial
+    #       default: False
+    parser.add_argument('-ax', '--axial_only',
+                            dest='axial',
+                            action='store_true',
+                            help='Only create axial pngs. Default is false - create all 3 axes')
+                           
     arguments = parser.parse_args()
     
     return arguments, parser
@@ -373,8 +380,14 @@ else:
     bg_cropped, overlay_cropped, slices_list = crop_data(bg, overlay)
                                               # Crop data (but keep slice_ids)
     
-# Loop through the three axes
-for axis_id in range(3):  
+# Figure out which axes to make pngs of
+if arguments.axial:
+    axes_range = 2
+else:
+    axes_range = range(3)
+    
+# Loop through the axes
+for axis_id in axes_range:
     
     axis_name = xyz_dict['name'][axis_id] # Get the name of the axis
     print axis_name.capitalize()          # and print to screen
