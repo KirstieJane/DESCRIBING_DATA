@@ -382,7 +382,7 @@ else:
     
 # Figure out which axes to make pngs of
 if arguments.axial:
-    axes_range = 2
+    axes_range = range(2,3)
 else:
     axes_range = range(3)
     
