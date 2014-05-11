@@ -75,10 +75,6 @@ def calc_stats(df, measures):
                 partP_mat, partES_mat)
 
     
-def mask_triangle():
-    # Create a mask of only the lower triangle and the diagonal
-    mask = np.triu(empty_array, k=1)
-
 def setup_arrays(measures):
     '''
     This very little function just creates the following arrays
@@ -169,7 +165,6 @@ def plot_matrix(df, measures, names, height, group_names_short, star=False):
     # Import the various modules that you need
     import numpy as np
     import matplotlib.pylab as plt
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
     import matplotlib.colors as colors
     
     # First calculate the pairwise and partial statistic matrices
@@ -177,7 +172,7 @@ def plot_matrix(df, measures, names, height, group_names_short, star=False):
             partP_mat, partES_mat)  = calc_stats(df, measures)
 
     # We're going to make two separate figures:
-    for ES_mat, P_mat in zip([pairES_mat, pairP_mat],[partES_mat, partP_mat]):
+    for ES_mat, P_mat in zip([pairES_mat, partES_mat],[pairP_mat, partP_mat]):
         
         # Make a figure
         fig = plt.figure(figsize=(height, height))
@@ -192,45 +187,37 @@ def plot_matrix(df, measures, names, height, group_names_short, star=False):
         # Calculate the number of measures in the list
         N = len(measures)
         
-        # Create the masks for the odds ratios and the pearson effect sizes
-        maskO, maskR = calc_masks(df, measures, ES_mat)
-        maskO = np.ones_like(pairES_mat)
-        maskR = np.ones_like(pairES_mat)
+        # Masks for the odds ratios and the pearson effect sizes
+        maskR, maskO = calc_masks(df, measures)
         
-        for y in measures:
-            if df[y].nunique() == 2:
-                print y
-                maskO[measures.index(y),:] = 0
-            else:
-                maskR[measures.index(y),:] = 0
-
-        # Create a mask of only the lower triangle and the diagonal
-        maskTri = np.triu(pairES_mat, k=1)
-        
-        print pairES_mat
-        print pairP_mat
-        
-        # Add this mask to the R and O masks. The reason you add these
-        # is because in the next step we're going to only plot
-        # values that have a mask value of 0
-        # maskR = maskR + maskTri
-        # maskO = maskO + maskTri
-
         # Mask the effect size matrices
-        mpairO = np.ma.masked_array(pairES_mat, mask=maskO)
-        mpairR = np.ma.masked_array(pairES_mat, mask=maskR)
+        mR_mat = np.ma.masked_array(ES_mat, mask=maskR)
+        mO_mat = np.ma.masked_array(ES_mat, mask=maskO)
 
         # Make the background grey
-        pbg = plt.imshow(np.ones_like(pairES_mat)*0.5, cmap='Greys', vmin=0, vmax=1, interpolation='none')
+        pbg = plt.imshow(np.ones_like(ES_mat)*0.5, 
+                             cmap='Greys', 
+                             vmin=0, vmax=1, 
+                             interpolation='none')
         
-        # Plot the pairwise effect size map
-        r = plt.imshow(mpairR, cmap = 'RdBu_r', vmin=-1, vmax=1, interpolation='none')
-        o = plt.imshow(mpairO, cmap = 'PRGn', vmin=0.2, vmax=5, interpolation='none', norm=colors.LogNorm(vmin=0.02, vmax=5))
+        # Plot the two effect size maps
+        r = plt.imshow(mR_mat, 
+                           cmap = 'RdBu_r', 
+                           vmin=-1, vmax=1, 
+                           interpolation='none')
+        o = plt.imshow(mO_mat, 
+                           cmap = 'PRGn', 
+                           vmin=0.2, vmax=5, 
+                           interpolation='none', 
+                           norm=colors.LogNorm(vmin=0.02, vmax=5))
 
         # Make the diagonal line black
-        eye_mat = np.eye(mpairR.shape[0])
-        meye = np.ma.masked_array(eye_mat, 1 - eye_mat)
-        eye = plt.imshow(meye, cmap='Greys', vmin=0, vmax=1, interpolation='none')
+        eye_mat = np.eye(mR_mat.shape[0])
+        meye = np.ma.masked_array(eye_mat, 1-eye_mat)
+        eye = plt.imshow(meye, 
+                             cmap='Greys', 
+                             vmin=0, vmax=1, 
+                             interpolation='none')
         
         # Make your tick_labels line up sensibly
         locs = np.arange(0, float(N))
@@ -240,21 +227,7 @@ def plot_matrix(df, measures, names, height, group_names_short, star=False):
         ax.set_yticklabels(names)
 
         # Set up TWO lovely color bars
-        divider = make_axes_locatable(plt.gca())
-        
-        tick_labels = [ '{: 1.1f}'.format(tick) for tick in list(np.linspace(-1,1,5)) ]
-        cax_r = divider.append_axes("right", "5%", pad="12%")
-        cbar_r = fig.colorbar(r, cax=cax_r, ticks = list(np.linspace(-1,1,5)))
-        cax_r.set_yticklabels(tick_labels) 
-        cax_r.set_ylabel('Pearson r', size='small')
-        cax_r.yaxis.set_label_position("left")
-
-        tick_labels = [ '{: 1.1f}'.format(tick) for tick in list(np.logspace(np.log(0.2), np.log(5), 5, base=np.e)) ]
-        cax_o = divider.append_axes("right", "5%", pad="25%")
-        cbar_o = fig.colorbar(o, cax=cax_o, ticks = list(np.logspace(np.log(0.2), np.log(5), 5, base=np.e)))
-        cax_o.set_yticklabels(tick_labels)
-        cax_o.set_ylabel('Odds ratio', size='small')
-        cax_o.yaxis.set_label_position("left")
+        setup_colorbars(ax)
 
         # Give your plot a lovely title
         ax.set_title(group_names_short[c])
@@ -279,7 +252,6 @@ def plot_matrix(df, measures, names, height, group_names_short, star=False):
                     verticalalignment='center',
                     color = 'k')
         
-    #plt.tight_layout()
 
     return fig
 
@@ -298,10 +270,13 @@ def calc_masks(df, measures, ES_mat, tri=True):
     # Import the modules you need
     import numpy as np
     
-    # Create the masks for the odds ratios and the pearson effect sizes
-    maskO = np.ones_like(ES_mat)
-    maskR = np.ones_like(ES_mat)
-        
+    # Create the empty masks for the odds ratios and the pearson effect sizes
+    ones_array = np.ones([len(measures), len(measures)])
+    maskO = np.copy(ones_array)
+    maskR = np.copy(ones_array)
+
+    # Loop through the measures and mark (with a 0) all rows that represent
+    # dichotomous variables in maskO and all others in maskR
     for y in measures:
         if df[y].nunique() == 2:
             print y
@@ -311,17 +286,71 @@ def calc_masks(df, measures, ES_mat, tri=True):
 
     # If tri=True create a mask of only the lower triangle
     if tri:
-        maskTri = np.triu(ES_mat)
+        maskTri = np.triu(ones_array)
                 
         # Add this mask to the R and O masks. The reason you add these
         # is because in the next step we're going to only plot
-        # values that have a mask value of 0
+        # values that have a mask value of 0. If you multiply them
+        # (which is what I played around with for ages) then you include
+        # too many cells.
         maskR = maskR + maskTri
         maskO = maskO + maskTri
 
-    # Now mask the effect size matrices
-    mpairO = np.ma.masked_array(ES_mat, mask=maskO)
-    mpairR = np.ma.masked_array(ES_mat, mask=maskR)
+    # Return the masks
+    return maskR, maskO
 
-    return mpairR, mpairO
+
+def setup_colorbars(ax, only_useful=False, maskR=0, maskO=0):
+    '''    
+    Set up two lovely colorbars, one for the pearson correlations 
+    and one for the odds ratios.
     
+    If only_useful is true then maskR and maskO are used to figure out
+    which of the colorbars to add to the axis.
+    
+    If only_useful is false then both colorbars are added to the axis
+    '''
+    
+    # Import what you need
+    import numpy as np
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+    # Make the axis locatable
+    divider = make_axes_locatable(ax)
+
+    # If only_useful is True then we're going to figure out which of these
+    # two colorbars we actually need
+    if only_useful:
+        # Include the odds ratio colorbar if maskO has some non-zero values
+        includeO = not np.all(maskO)
+        includeR = not np.all(maskR)
+    else:
+        includeO = True
+        includeR = True
+
+    if includeR:
+        # Set up the pearson colorbar
+        tick_labels = [ '{: 1.1f}'.format(tick) for tick in list(np.linspace(-1,1,5)) ]
+        cax_r = divider.append_axes("right", "5%", pad="12%")
+        cbar_r = fig.colorbar(r, cax=cax_r, ticks = list(np.linspace(-1,1,5)))
+        cax_r.set_yticklabels(tick_labels) 
+        cax_r.set_ylabel('Pearson r', size='small')
+        cax_r.yaxis.set_label_position("left")
+        
+    if includeO:
+        
+        # Figure out how much you need to pad this color bar axis by.
+        # It will depend on whether you've already plotted the pearson colorbar
+        if includeR:
+            pad = "25%"
+        else:
+            pad = "12%"
+            
+        # Set up the odds ratio colorbar
+        tick_labels = [ '{: 1.1f}'.format(tick) for tick in list(np.logspace(np.log(0.2), np.log(5), 5, base=np.e)) ]
+        cax_o = divider.append_axes("right", "5%", pad=pad)
+        cbar_o = fig.colorbar(o, cax=cax_o, ticks = list(np.logspace(np.log(0.2), np.log(5), 5, base=np.e)))
+        cax_o.set_yticklabels(tick_labels)
+        cax_o.set_ylabel('Odds ratio', size='small')
+        cax_o.yaxis.set_label_position("left")
+
