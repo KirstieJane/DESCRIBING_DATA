@@ -119,8 +119,17 @@ def fit_model(y, formula, df):
     return lm
     
 def partial_correlation(df, x, y, measures):
+    '''
+    A little (but hopefully quite useful) piece of code that calculates
+    the partial correlation between x and y while covarying for the
+    remaining measures in a list of measures.
     
-    # Import pearson correlation
+    It requires a data frame, the names of x and y, and a list of measures
+    (that don't need to, but can, contain x or y)
+    
+    This function returns r and p values
+    '''
+    # Import the modules you need
     from scipy.stats import pearsonr
     from statsmodels.formula.api import ols
 
@@ -146,36 +155,45 @@ def partial_correlation(df, x, y, measures):
     return r, p
 
 
-def plot_matrix(df_list, measures, names, height, group_names_short, star=False):
+def plot_matrix(df, measures, names, height, group_names_short, star=False):
+    '''
+    This code makes separate figures of the pairwise and partial correlation
+    matrices as created by the calc_stats function.
+    
+    The pairwise correlation is on top and the partial correlation is below.
+    
+    The code returns the two figures along with the four stats matrices as
+    calculated by calc_stats.
+    '''    
     
     # Import the various modules that you need
     import numpy as np
     import matplotlib.pylab as plt
     from mpl_toolkits.axes_grid1 import make_axes_locatable
-    from scipy.stats import pearsonr
-    from statsmodels.formula.api import ols, logit
     import matplotlib.colors as colors
     
-    # Make a figure
-    fig = plt.figure(figsize=(height*len(df_list), height))
+    # First calculate the pairwise and partial statistic matrices
+    (pairP_mat, pairES_mat, 
+            partP_mat, partES_mat)  = calc_stats(df, measures)
 
-    # Set a sensible sized font
-    font = { 'size'   : 22 * height/10}
-    plt.rc('font', **font)
-
-    # Make separate plots for the df_lists:
-    for c, df in enumerate(df_list):
+    # We're going to make two separate figures:
+    for ES_mat, P_mat in zip([pairES_mat, pairP_mat],[partES_mat, partP_mat]):
         
-        # Add a new axis for each df_list
-        ax = fig.add_subplot(1,len(df_list), c+1)
+        # Make a figure
+        fig = plt.figure(figsize=(height, height))
+
+        # Set a sensible sized font
+        font = { 'size'   : 22 * height/10}
+        plt.rc('font', **font)
+
+        # Add an axis for the figure
+        ax = fig.add_subplot(111)
 
         # Calculate the number of measures in the list
         N = len(measures)
-
-        # Calculate the pairwise and partial statistic matrices
-        (pairP_mat, pairES_mat, 
-                partP_mat, partES_mat)  = calc_stats(df, measures)
-                  
+        
+        # Create the masks for the odds ratios and the pearson effect sizes
+        maskO, maskR = calc_masks(df, measures, ES_mat)
         maskO = np.ones_like(pairES_mat)
         maskR = np.ones_like(pairES_mat)
         
@@ -265,3 +283,45 @@ def plot_matrix(df_list, measures, names, height, group_names_short, star=False)
 
     return fig
 
+def calc_masks(df, measures, ES_mat, tri=True):
+    '''
+    This little piece of code figures out the appropriate indices of the
+    ES_mat to plot as pearson correlations or as odds ratios.
+    
+    If tri=True then the code additionally masks the upper triangle so that
+    there are no redundant values plotted in the figure. (Note that actually
+    combinations of continuous and dichotomous measures will be calculated
+    differently and therefore if tri is True the differences between these
+    measures will be hidden. Importantly though, this is very unlikely to
+    make a difference in the real world)
+    '''
+    # Import the modules you need
+    import numpy as np
+    
+    # Create the masks for the odds ratios and the pearson effect sizes
+    maskO = np.ones_like(ES_mat)
+    maskR = np.ones_like(ES_mat)
+        
+    for y in measures:
+        if df[y].nunique() == 2:
+            print y
+            maskO[measures.index(y),:] = 0
+        else:
+            maskR[measures.index(y),:] = 0
+
+    # If tri=True create a mask of only the lower triangle
+    if tri:
+        maskTri = np.triu(ES_mat)
+                
+        # Add this mask to the R and O masks. The reason you add these
+        # is because in the next step we're going to only plot
+        # values that have a mask value of 0
+        maskR = maskR + maskTri
+        maskO = maskO + maskTri
+
+    # Now mask the effect size matrices
+    mpairO = np.ma.masked_array(ES_mat, mask=maskO)
+    mpairR = np.ma.masked_array(ES_mat, mask=maskR)
+
+    return mpairR, mpairO
+    
