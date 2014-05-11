@@ -100,6 +100,8 @@ def setup_arrays(measures):
     return (pairP_mat, pairES_mat, 
                 partP_mat, partES_mat)
 
+
+
 def fit_model(y, formula, df):
     from statsmodels.formula.api import ols, logit
 
@@ -113,6 +115,8 @@ def fit_model(y, formula, df):
         lm = ols(formula, df).fit()
 
     return lm
+
+
     
 def partial_correlation(df, x, y, measures):
     '''
@@ -151,7 +155,7 @@ def partial_correlation(df, x, y, measures):
     return r, p
 
 
-def plot_matrix(df, measures, names, height, group_names_short, star=False):
+def plot_matrix(df, measures, names, height, title, star=False, tri=True):
     '''
     This code makes separate figures of the pairwise and partial correlation
     matrices as created by the calc_stats function.
@@ -160,6 +164,8 @@ def plot_matrix(df, measures, names, height, group_names_short, star=False):
     
     The code returns the two figures along with the four stats matrices as
     calculated by calc_stats.
+    
+    
     '''    
     
     # Import the various modules that you need
@@ -170,25 +176,28 @@ def plot_matrix(df, measures, names, height, group_names_short, star=False):
     # First calculate the pairwise and partial statistic matrices
     (pairP_mat, pairES_mat, 
             partP_mat, partES_mat)  = calc_stats(df, measures)
+    
+    # Make two figures
+    pairFig = plt.figure("pairFig", figsize=(height, height))
+    partFig = plt.figure("partFig", figsize=(height, height))
+    
+    # Set a sensible sized font
+    font = { 'size'   : 22 * height/10}
+    plt.rc('font', **font)
 
     # We're going to make two separate figures:
-    for ES_mat, P_mat in zip([pairES_mat, partES_mat],[pairP_mat, partP_mat]):
-        
-        # Make a figure
-        fig = plt.figure(figsize=(height, height))
+    for ES_mat, P_mat, fig_name, title_suffix in zip([pairES_mat, partES_mat],
+                                  [pairP_mat, partP_mat],
+                                  ["pairFig", "partFig"],
+                                  ['Pairwise', 'Partial']):
 
-        # Set a sensible sized font
-        font = { 'size'   : 22 * height/10}
-        plt.rc('font', **font)
-
+        # Set the appropriate figure as your current figure
+        fig = plt.figure(fig_name)                                    
         # Add an axis for the figure
         ax = fig.add_subplot(111)
 
-        # Calculate the number of measures in the list
-        N = len(measures)
-        
         # Masks for the odds ratios and the pearson effect sizes
-        maskR, maskO = calc_masks(df, measures)
+        maskR, maskO = calc_masks(df, measures, tri)
         
         # Mask the effect size matrices
         mR_mat = np.ma.masked_array(ES_mat, mask=maskR)
@@ -220,42 +229,29 @@ def plot_matrix(df, measures, names, height, group_names_short, star=False):
                              interpolation='none')
         
         # Make your tick_labels line up sensibly
-        locs = np.arange(0, float(N))
+        locs = np.arange(0, float(len(measures)))
         ax.set_xticks(locs)
         ax.set_xticklabels(names, rotation=45, ha='right')
         ax.set_yticks(locs)
         ax.set_yticklabels(names)
 
         # Set up TWO lovely color bars
-        setup_colorbars(ax)
+        ax = setup_colorbars(fig, ax, r, o, only_useful=False, maskR=0, maskO=0)
 
         # Give your plot a lovely title
-        ax.set_title(group_names_short[c])
+        ax.set_title(title + '\n' + title_suffix)
     
+        # If stars is true then add the stars to the appropriate cells
         if star:
-        
-            # Loop through all the measures and fill the arrays
-            i_inds, j_inds = np.triu_indices_from(pairES_mat, k=-3)
-            for i, j in zip(i_inds, j_inds):
-
-                # Figure out the text you're going to put on the plot
-                star = ''
-                if 0.01 < pairP_mat[i,j] < 0.05:
-                    star = '*'
-                elif 0.001 <= pairP_mat[i,j] < 0.01:
-                    star = '**'
-                elif pairP_mat[i,j] < 0.001:
-                    star = '***'
-
-                text = ax.text(i, j, star,
-                    horizontalalignment='center',
-                    verticalalignment='center',
-                    color = 'k')
+            ax = add_stars(ax, P_mat, tri)
         
 
-    return fig
+    return pairFig, pairES_mat, pairP_mat, partFig, partES_mat, partP_mat
 
-def calc_masks(df, measures, ES_mat, tri=True):
+
+
+
+def calc_masks(df, measures, tri=True):
     '''
     This little piece of code figures out the appropriate indices of the
     ES_mat to plot as pearson correlations or as odds ratios.
@@ -279,7 +275,6 @@ def calc_masks(df, measures, ES_mat, tri=True):
     # dichotomous variables in maskO and all others in maskR
     for y in measures:
         if df[y].nunique() == 2:
-            print y
             maskO[measures.index(y),:] = 0
         else:
             maskR[measures.index(y),:] = 0
@@ -300,7 +295,7 @@ def calc_masks(df, measures, ES_mat, tri=True):
     return maskR, maskO
 
 
-def setup_colorbars(ax, only_useful=False, maskR=0, maskO=0):
+def setup_colorbars(fig, ax, r, o, only_useful=False, maskR=0, maskO=0):
     '''    
     Set up two lovely colorbars, one for the pearson correlations 
     and one for the odds ratios.
@@ -353,4 +348,40 @@ def setup_colorbars(ax, only_useful=False, maskR=0, maskO=0):
         cax_o.set_yticklabels(tick_labels)
         cax_o.set_ylabel('Odds ratio', size='small')
         cax_o.yaxis.set_label_position("left")
+    
+    return ax
 
+
+def add_stars(ax, P_mat, tri=True):
+    '''
+    Use the p matrix to add stars to the significant cells.
+
+    If triangle is True then only put stars in the lower triangle, otherwise
+    put them in all the cells
+    '''
+    # Import what you need
+    import numpy as np
+    # Get the indices you need
+    if tri:
+        i_inds, j_inds = np.triu_indices_from(P_mat, k=0)
+    else:
+        i_inds, j_inds = np.triu_indices_from(P_mat, k=P_mat.shape[0]*-1)
+    
+    # Loop through all the measures and fill the arrays
+    for i, j in zip(i_inds, j_inds):
+
+        # Figure out the text you're going to put on the plot
+        star = ''
+        if 0.01 < P_mat[i,j] < 0.05:
+            star = '*'
+        elif 0.001 <= P_mat[i,j] < 0.01:
+            star = '**'
+        elif P_mat[i,j] < 0.001:
+            star = '***'
+
+        text = ax.text(i, j, star,
+            horizontalalignment='center',
+            verticalalignment='center',
+            color = 'k')
+
+    return ax
