@@ -7,13 +7,13 @@ def create_partial_correlation_matrix(df_list, measures, names, height, group_na
     import matplotlib.pylab as plt
     from mpl_toolkits.axes_grid1 import make_axes_locatable
     from scipy.stats import pearsonr
-    from statsmodels.formula.api import ols
+    from statsmodels.formula.api import ols, logit
 
     # Make a figure
     fig = plt.figure(figsize=(height*len(df_list), height))
 
     # Set a sensible sized font
-    font = { 'size'   : 22 * height/18}
+    font = { 'size'   : 22 * height/10}
     plt.rc('font', **font)
 
     # Make separate plots for the df_lists:
@@ -40,19 +40,43 @@ def create_partial_correlation_matrix(df_list, measures, names, height, group_na
         i_inds, j_inds = np.triu_indices_from(R, k=1)
         for i, j in zip(i_inds, j_inds):
             
+            # Your covars are all the measures you've selected
             covars = list(measures)
             
+            # In order to calculate the partial correlation
+            # you need to extract the X and Y variable of
+            # interest
             x = covars.pop(i)
             y = covars.pop(j-1)
-            
+                        
+            # Your formulae just set x and y to be a function
+            # of all the other covariates
             formula_x = x + ' ~ ' + ' + '.join(covars)
             formula_y = y + ' ~ ' + ' + '.join(covars)
 
-            lm_x = ols(formula_x, df).fit()
+            # If you have a y variable that is binary you need
+            # to ensure that you're conducting a logistic
+            # regression rather than ols
+            if df[x].nunique() == 2:
+                lm_x = logit(formula_x, df).fit()
+            else:
+                lm_x = ols(formula_x, df).fit()
+                
+            if df[y].nunique() == 2:
+                lm_y = logit(formula_y, df).fit()
+            else:
+                lm_y = ols(formula_y, df).fit()
+                
+            # Save the residuals from the model
             res_x = lm_x.resid
-            lm_y = ols(formula_y, df).fit()
             res_y = lm_y.resid
             
+            print lm_x.summary()
+            print lm_y.summary()
+            print pearsonr(res_x, res_y)
+            
+            # Now fill in the appropriate part of the partial
+            # correlation matrix
             partr_mat[i,j], partp_mat[i,j] = pearsonr(res_x, res_y)
             partr_mat[j,i], partp_mat[j,i] = pearsonr(res_x, res_y)
             
@@ -113,7 +137,7 @@ def create_correlation_matrix(df_list, measures, names, height, group_names_shor
 
     fig = plt.figure(figsize=(height*len(df_list), height))
 
-    font = { 'size'   : 22 * height/18}
+    font = { 'size'   : 22 * height/10}
 
     plt.rc('font', **font)
 
@@ -179,3 +203,5 @@ def create_correlation_matrix(df_list, measures, names, height, group_names_shor
     plt.tight_layout()
 
     return fig
+
+    
