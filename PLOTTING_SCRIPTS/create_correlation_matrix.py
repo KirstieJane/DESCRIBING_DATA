@@ -1,10 +1,30 @@
 #!/usr/bin/env python
 
 def calc_stats(df, measures):
+    '''
+    Calc stats takes a data frame (df) and a list of measures of interest
+    and calculates and returns four matrices:
+        * pairES --> pairwise effect size matrix
+        * pairP ---> pairwise p value matrix
+        * partES --> partial effect size matrix
+        * partP ---> partial p value matrix
+        
+    If the y measure is *dichotomous* the effect size is that of an odds ratio,
+    calculated as the exponent of the parameter estimate of the logistic
+    regression. A pairwise logistic regression is run for the pairES, and a 
+    full model is run for the partES.
+    
+    If the y measure is *continuous* the effect size is that of a pearson
+    correlation. A pairwise correlation is performed for the pairwiseES and
+    the partial correlation is calculated as a correlation of the residuals
+    from two models with x and y missing as appropriate (using the
+    partial_correlation function defined below).
 
-    # Import what you need
+    Written by Kirstie Whitaker (kw401@cam.ac.uk) on 11th May 2014
+    '''
+    
+    # Import the modules you need
     import numpy as np
-    from statsmodels.formula.api import ols, logit
     from scipy.stats import pearsonr
 
     # Set up the empty arrays that you're interested in
@@ -32,6 +52,7 @@ def calc_stats(df, measures):
             # Set all the matrix element values equal to 1 
             # if you're filling in the diagonal of the matrix
             if not i == j:
+                
                 # Calculate the ols regression or logistic
                 # regression for just this pair of variables
                 formula_pair = '{} ~ {}'.format(y, x)
@@ -48,7 +69,6 @@ def calc_stats(df, measures):
                     partES_mat[i, j] = np.exp(lm_all.params)[x]
                 else:
                     pairES_mat[i, j] = pearsonr(df[x], df[y])[0]
-                    print pairES_mat[i,j], np.sqrt(lm_pair.rsquared)
                     partES_mat[i, j] = partial_correlation(df, x, y, measures)[0]
                     
     return (pairP_mat, pairES_mat, 
@@ -60,13 +80,20 @@ def mask_triangle():
     mask = np.triu(empty_array, k=1)
 
 def setup_arrays(measures):
+    '''
+    This very little function just creates the following arrays
+    as arrays of 1s. The arrays are square and have length and 
+    with equal to the number of meaures.
+    '''
+    # Import what you need
     import numpy as np
+    
     # Create an array of ones that's the appropriate size
     ones_array = np.ones([len(measures), len(measures)])
 
     # There are a few arrays we want to make
     # specifically pairwise comparisons and partial comparisons
-    # and we'll save the R (if OLS), odds ratio (if logistic)
+    # and we'll save the effect seize (R if OLS, odds ratio if logistic)
     # and P values (for both)
     pairES_mat = np.copy(ones_array)
     pairP_mat = np.copy(ones_array)
