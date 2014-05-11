@@ -268,8 +268,10 @@ def create_stats_dict(df, group_var, continuous_measures=None, discrete_measures
                             stats_dict[key] = ttest_ind(values[1], values[0], equal_var = True)
             
                             # Conduct mann whitney U test (non-parametric test of medians)
+                            # NOTE that this returns a 1 tailed p value so we multiply it here
+                            # by 2
                             key = '_'.join([group_var, str(name), discrete, a, 'mannwhitneyu'])
-                            stats_dict[key] = mannwhitneyu(values[1], values[0])
+                            stats_dict[key] = mannwhitneyu(values[1], values[0]*2)
 
         # For combos of discrete measures then you can conduct
         # FISHER EXACT tests

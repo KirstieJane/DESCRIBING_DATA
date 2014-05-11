@@ -28,7 +28,7 @@ def create_violin_plots(df_list, measures_list, measures_names, height, group_na
                                 ax = ax,
                                 labels = group_names,
                                 show_boxplot=False,
-                                plot_opts = { 'violin_fc':plt.cm.Greens(.7) ,
+                                plot_opts = { 'violin_fc':plt.cm.Paired(10.0/13.0) ,
                                               'cutoff': True,
                                               'cutoff_val': max(values),
                                               'cutoff_type': 'abs'})
@@ -89,15 +89,10 @@ def create_violin_plots(df_list, measures_list, measures_names, height, group_na
                 # from 1 rather than 0)
                 counter+=1
                 
-                # Calculate Bartlett test of equal variance
-                t_var, p_var = stats.bartlett(df_list[a][measure], df_list[b][measure])
-                
-                # Calculate the ttest results
-                if p_var < 0.05:
-                    t, p = stats.ttest_ind(df_list[a][measure], df_list[b][measure], equal_var=False)
-                else:
-                    t, p = stats.ttest_ind(df_list[a][measure], df_list[b][measure])
-                
+                # Calculate the test statistics and choose the correct one
+                stats_dict = calc_ttest_dict(df_list[a][measure].values[:], df_list[b][measure].values[:])
+                p, test_name = figure_out_test_stat(stats_dict)
+                                
                 # Figure out the text you're going to put on the plot
                 star = 'ns'
                 if 0.01 < p < 0.05:
@@ -107,22 +102,10 @@ def create_violin_plots(df_list, measures_list, measures_names, height, group_na
                 elif p < 0.001:
                     star = '***'
                 
-                '''                                    
-                # Plot the t-test line halfway between the max value
-                # and the top of the plot
-                measure_max = df_list[0][measure].max()
-                for df in df_list:
-                    if df[measure].max() > measure_max:
-                        measure_max = df[measure].max()
-                '''
                 # We're going to plot the line that shows which test you're conducting
                 # at increments of the step up measure
                 y = (counter - 0.5) * step_up + ymax
-                '''
-                # We're going to plot the line that shows which test you're conducting
-                # halfway between the ymax * 1.1 and the measure_max
-                y = (ymax*1.1 + measure_max) / 2.0
-                '''
+
                 # The drop (the amount that the line goes down above the two measures
                 # you care about) is going to be 2% of the range of the data
                 drop = yrange/ 50
@@ -134,10 +117,70 @@ def create_violin_plots(df_list, measures_list, measures_names, height, group_na
                     horizontalalignment='center',
                     verticalalignment='bottom',
                     color = 'k')
-        
+                    
+                print a, b, test_name
 
     # Make sure the layout looks good :)        
     fig.tight_layout()
     
     return fig
 
+def calc_ttest_dict(a, b):
+    '''
+    Calculate the comparison between the two sets of data
+    
+    Importantly, although the stars will be the same, this code
+    accurately applies either a Student's t, Welch's t, or Mann Whitney U
+    test
+    '''
+    # Import what you need
+    import numpy as np
+    from scipy.stats import ttest_ind, bartlett, mannwhitneyu, normaltest
+    
+    stats_dict = {}
+    
+    # Mask out the not a numbers
+    a = [ x for x in a if not np.isnan(x) ]
+    b = [ x for x in b if not np.isnan(x) ]
+
+    # Conduct test for equal variance
+    stats_dict['eqvar'] = bartlett(a, b)
+    
+    # Conduct test for normality
+    stats_dict['normal'] = normaltest(np.hstack([a, b]))
+    
+    # When you test for equal means (ttest) you have different options
+    # depending on if you have equal variances or not. You can also
+    # run the non-parametric Mann Whitney U test
+    
+    # All three will be entered in the stats_dict
+    
+    # Conduct Welch's t-test (unequal variances)
+    stats_dict['ttest_uneqvar'] = ttest_ind(a, b, equal_var = False)
+
+    # Conduct standard student's t-test (equal variances)
+    stats_dict['ttest_eqvar'] = ttest_ind(a, b, equal_var = True)
+
+    # Conduct mann whitney U test (non-parametric test of medians)
+    stats_dict['mannwhitneyu'] = mannwhitneyu(a, b)
+    
+    return stats_dict
+    
+    
+def figure_out_test_stat(stats_dict):
+    '''
+    A snazzy little function to figure out from a stats_dict
+    which is the right p value to use for the violin plot
+    '''
+    if stats_dict['normal'][1] > 0.05:
+        if stats_dict['eqvar'][1] > 0.05:
+            test_p = stats_dict['ttest_eqvar'][1]
+            test_name = "Student's t"
+        else:
+            test_p = stats_dict['ttest_uneqvar'][1]
+            test_name = "Welch's t"
+    else:
+        test_p = stats_dict['mannwhitneyu'][1]*2 # Multiply by 2 to get 2 tailed test
+        test_name = "Mann Whitney U"
+
+    return test_p, test_name

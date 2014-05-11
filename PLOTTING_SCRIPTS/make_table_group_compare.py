@@ -134,7 +134,6 @@ def make_table_group_compare(df, group_var, stats_dict, group_names_long, contin
                 # If you don't have normally distributed data then you need
                 # to use a mann whitney U test
                 test_stat = mannwhitney_u
-                print test_stat
                 test_p = mannwhitney_p
                 
                 # Adjust the symbol if the test of non-normality is very significant
