@@ -155,8 +155,9 @@ def create_stats_dict(df, group_var, continuous_measures=None, discrete_measures
 
                 # Conduct mann whitney U test (non-parametric test of medians)
                 key = '_'.join([measure, 'mannwhitneyu'])
-                stats_dict[key] = mannwhitneyu(values[1], values[0])
-        
+                u, p = mannwhitneyu(values[1], values[0])
+                stats_dict[key] = (u, p*2)        
+                
         # For two continuous measues we can calculate
         # PAIRWISE CORRELATIONS
         if continuous_measures:
@@ -231,8 +232,9 @@ def create_stats_dict(df, group_var, continuous_measures=None, discrete_measures
         
                         # Conduct mann whitney U test (non-parametric test of medians)
                         key = '_'.join([group_var, 'all', discrete, a, 'mannwhitneyu'])
-                        stats_dict[key] = mannwhitneyu(values[1], values[0])
-                
+                        u, p = mannwhitneyu(values[1], values[0])
+                        stats_dict[key] = (u, p*2)
+                            
                     # Next look at the two groups separately:
                     for name, group in grouped:
                         grouped_discrete = group.groupby(discrete)
@@ -269,9 +271,10 @@ def create_stats_dict(df, group_var, continuous_measures=None, discrete_measures
             
                             # Conduct mann whitney U test (non-parametric test of medians)
                             # NOTE that this returns a 1 tailed p value so we multiply it here
-                            # by 2
+                            
                             key = '_'.join([group_var, str(name), discrete, a, 'mannwhitneyu'])
-                            stats_dict[key] = mannwhitneyu(values[1], values[0]*2)
+                            u, p = mannwhitneyu(values[1], values[0])
+                            stats_dict[key] = (u, p*2)
 
         # For combos of discrete measures then you can conduct
         # FISHER EXACT tests

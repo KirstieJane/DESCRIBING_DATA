@@ -28,7 +28,7 @@ def create_violin_plots(df_list, measures_list, measures_names, height, group_na
                                 ax = ax,
                                 labels = group_names,
                                 show_boxplot=False,
-                                plot_opts = { 'violin_fc':plt.cm.Paired(10.0/13.0) ,
+                                plot_opts = { 'violin_fc':plt.cm.Blues(9.0/10.0) ,
                                               'cutoff': True,
                                               'cutoff_val': max(values),
                                               'cutoff_type': 'abs'})

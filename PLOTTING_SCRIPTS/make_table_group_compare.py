@@ -31,6 +31,7 @@ def make_table_group_compare(df, group_var, stats_dict, group_names_long, contin
     row_text = ['', '{} Cohort n={:2.0f}'.format(group_names_long[1], n1_all),
                             '{} Cohort n={:2.0f}'.format(group_names_long[0], n0_all),
                             'Test {} <> {}'.format(group_names_long[1], group_names_long[0])]
+                            
     # Add this row of text to the table_list appended by a tab
     table_list.append('\t'.join(row_text))
     
@@ -135,6 +136,7 @@ def make_table_group_compare(df, group_var, stats_dict, group_names_long, contin
                 # to use a mann whitney U test
                 test_stat = mannwhitney_u
                 test_p = mannwhitney_p
+                print mannwhitney_p
                 
                 # Adjust the symbol if the test of non-normality is very significant
                 symbol = '='
@@ -153,11 +155,11 @@ def make_table_group_compare(df, group_var, stats_dict, group_names_long, contin
     
                     row_text = [ measure, '{:2.3g} ({:2.3g}-{:2.3g}), {} missing'.format(perc50_0, perc25_0, perc75_0, (n0_all - n0)),
                                     '{:2.3g} ({:2.3g}-{:2.3g}), {} missing'.format(perc50_1, perc25_1, perc75_1, (n1_all - n1)),
-                                    'U = {:2.3g}, p {} {:2.3g}, {}'.format(np.float(test_stat), symbol, test_p, normal_dist_text)]
+                                    'U = {:2.3g}, p {} {:2.3g} {}'.format(np.float(test_stat), symbol, test_p, normal_dist_text)]
                 else:
                     row_text = [ measure, '{:2.3g} ({:2.3g}-{:2.3g})'.format(perc50_0, perc25_0, perc75_0),
                                     '{:2.3g} ({:2.3g}-{:2.3g})'.format(perc50_1, perc25_1, perc75_1),
-                                    'U = {:2.3g}, p {} {:2.3g}, {}'.format(np.float(test_stat), symbol, test_p, normal_dist_text)]
+                                    'U = {:2.3g}, p {} {:2.3g} {}'.format(np.float(test_stat), symbol, test_p, normal_dist_text)]
 
             # Now add this to your table_list            
             table_list.append('\t'.join(row_text)) 

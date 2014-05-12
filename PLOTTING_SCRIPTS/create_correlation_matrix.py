@@ -235,6 +235,8 @@ def plot_matrix(df, measures, names, height, title, star=False, tri=True):
         ax.set_yticks(locs)
         ax.set_yticklabels(names)
 
+        plt.tight_layout()
+        
         # Set up TWO lovely color bars
         ax = setup_colorbars(fig, ax, r, o, only_useful=False, maskR=0, maskO=0)
 
