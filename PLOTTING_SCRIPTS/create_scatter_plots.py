@@ -147,7 +147,7 @@ def get_fig(height, layout='one_large_three_small'):
         
         ax = [ ax1 ]
         
-        msizes = [ 15 ]
+        msizes = [ 10 ]
         
     # Set the marker sizes
     msizes = [ m * height for m in msizes ]
@@ -191,6 +191,7 @@ def plot_scatter_dtimeasures(df_list, x, y, groups, height, labels, title, plot_
 
         # Use the scatter interaction code to plot both groups
         # onto the appropriate plot
+
         ax[i] = scatter_interaction(ax=ax[i], x = x_list, y = y_list,
                         groups = groups,
                         colors = plot_colors,
