@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-def scatter_interaction(ax, x, y, groups, colors, ms=5, labels=None, title=None, legend=False, formula='y ~ x'):
+def scatter_interaction(ax, x, y, groups, colors, ms=5, labels=None, title=None, legend=False, formula='y ~ x', legend_loc='best'):
     
     # Here are the imports
     import numpy as np
@@ -42,7 +42,7 @@ def scatter_interaction(ax, x, y, groups, colors, ms=5, labels=None, title=None,
         df2.sort('x', inplace=True)
         lm = ols(formula, df2).fit()
         ps = [ '{:2.4f}'.format(p) for p in lm.pvalues[1:] ]
-        print '    r2 = {}, p(s) = {}'.format(lm.rsquared, ', '.join(ps))
+        print '    {}, r2 = {}, p(s) = {}'.format(g_i, lm.rsquared, ', '.join(ps))
         prstd, iv_l, iv_u = wls_prediction_std(lm)
         iv_l = np.array(iv_l)
         iv_u = np.array(iv_u)
@@ -66,7 +66,7 @@ def scatter_interaction(ax, x, y, groups, colors, ms=5, labels=None, title=None,
         
     if legend:
         # Add the legend
-        leg = ax.legend(loc='best', fancybox=True, fontsize=ms/5.)
+        leg = ax.legend(loc=legend_loc, fancybox=True, fontsize=ms/2.)
         leg.get_frame().set_alpha(0)
 
     # Set the y limits
@@ -84,16 +84,16 @@ def scatter_interaction(ax, x, y, groups, colors, ms=5, labels=None, title=None,
     ax.set_ybound(upper, lower)
     
     # Set the axis labels    
-    ax.set_ylabel(labels[1], fontsize=ms/5.0)
-    ax.set_xlabel(labels[0], fontsize=ms/5.0)
+    ax.set_ylabel(labels[1], fontsize=ms/2.0)
+    ax.set_xlabel(labels[0], fontsize=ms/2.0)
     
     for item in (ax.get_xticklabels() + ax.get_yticklabels()):
-        item.set_fontsize(ms/5.0)
+        item.set_fontsize(ms/2.0)
     # Adjust the power limits so that you use scientific notation on the y axis
     plt.ticklabel_format(style='sci', axis='y')
     ax.yaxis.major.formatter.set_powerlimits((-3,3))
     
-    plt.rc('font', **{'size':ms/5.0})
+    plt.rc('font', **{'size':ms/2.0})
     
     if title:
         # Set the overall title
@@ -133,7 +133,7 @@ def get_fig(height, layout='one_large_three_small'):
         ax3 = plt.subplot2grid((1,4), (0,2))
         ax4 = plt.subplot2grid((1,4), (0,3))
     
-        msizes = [ 15, 15, 15, 15 ] # Marker sizes
+        msizes = [ 5, 5, 5, 5 ] # Marker sizes
         
         # Create your axes list
         ax = [ ax1, ax2, ax3, ax4 ]
@@ -147,14 +147,14 @@ def get_fig(height, layout='one_large_three_small'):
         
         ax = [ ax1 ]
         
-        msizes = [ 10 ]
+        msizes = [ 5 ]
         
     # Set the marker sizes
     msizes = [ m * height for m in msizes ]
     
     return fig, ax, msizes
 
-def plot_scatter_dtimeasures(df_list, x, y, groups, height, labels, title, plot_colors, grid_layout='one_large_three_small', legend=False, formula='y ~ x'):
+def plot_scatter_dtimeasures(df_list, x, y, groups, height, labels, title, plot_colors, grid_layout='one_large_three_small', legend=False, legend_loc='best', formula='y ~ x'):
     """
     This code takes in a list of pandas data frames, and creates
     four plots - one large and 3 small to the right - one for each of
@@ -198,11 +198,12 @@ def plot_scatter_dtimeasures(df_list, x, y, groups, height, labels, title, plot_
                         labels = [labels[0], labels[i+1]],
                         ms = msizes[i],
                         legend=legend,
+                        legend_loc=legend_loc,
                         formula=formula)
 
     if title:
         # Give the figure a title
-        fig.suptitle(title, fontsize=msizes[0]/2.0)
+        fig.suptitle(title, fontsize=msizes[0]/1.5)
         # And give it a bit more room at the top
         plt.subplots_adjust(top=0.9)
     
