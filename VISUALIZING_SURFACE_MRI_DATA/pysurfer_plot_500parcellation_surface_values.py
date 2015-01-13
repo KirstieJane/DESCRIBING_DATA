@@ -13,15 +13,12 @@ import os
 import sys
 import argparse
 import numpy as np
-import scipy.io as sio
-from glob import glob
 
 import pandas as pd
 import nibabel as nib
 from surfer import Brain
 
 import itertools as it
-from scipy.stats.stats import linregress
 
 import matplotlib.pylab as plt
 import matplotlib.image as mpimg
@@ -261,7 +258,7 @@ df = df.T
 df.columns = aparc_names
 
 # Set l and u
-l, u = calc_range(roi_data, l, u, thresh, center)
+l, u = calc_range(roi_data_file, l, u, thresh, center)
 
 # Now make your pictures
 for hemi, surface in it.product(hemi_list, surface_list):
