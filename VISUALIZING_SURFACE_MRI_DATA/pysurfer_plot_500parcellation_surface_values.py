@@ -215,6 +215,18 @@ if not os.path.isdir(output_dir):
 measure = os.path.basename(roi_data_file)
 measure = os.path.splitext(measure)[0]
 
+# Define the aparc names
+# Read in aparc names file
+aparc_names_file =  os.path.join(subjects_dir,
+                          subject_id, "parcellation",
+                          "500.names.txt")
+                          
+# Read in the names from the aparc names file 
+# dropping the first 41
+aparc_names = [line.strip() for line in open(aparc_names_file)]
+aparc_names = aparc_names[41::]
+
+# Figure out which surfaces you're going to use
 if surface == 'both':
     surface_list = [ "inflated", "pial" ]
 elif surface == 'inflated':
@@ -235,7 +247,7 @@ seg = '500cortConsec'
 if not os.path.isdir(roi_data_file):
     print "Roi data file doesn't exist"
     sys.exit()
-if not os.path.isdir(os.path.join(subjects_dir, subject_id, "surf"):
+if not os.path.isdir(os.path.join(subjects_dir, subject_id, "surf")):
     print "Fsaverage directory doesn't exist"
     print "Check subjects_dir and subject_id"
     sys.exit()
@@ -243,16 +255,6 @@ if not os.path.isdir(os.path.join(subjects_dir, subject_id, "surf"):
 #=============================================================================
 # READ IN THE MEASURE DATA
 #=============================================================================
-# Read in aparc names file
-aparc_names_file =  os.path.join(subjects_dir,
-                          subject_id, "parcellation",
-                          "500.names.txt")
-                          
-# Read in the names from the aparc names file 
-# dropping the first 41 ################# BUUUUUG - needs to be fixed
-aparc_names = [line.strip() for line in open(aparc_names_file)]
-aparc_names = aparc_names[41::]
-
 # Read in the data and match it up with the names
 df = pd.read_csv(roi_data_file, index_col=False, header=None)
 df = df.T
@@ -266,7 +268,8 @@ for hemi, surface in it.product(hemi_list, surface_list):
 
     prefix = '_'.join([measure, hemi, surface])
     
-    # Read in aparc annot file
+    # Read in aparc annot file which will be inside
+    # the label folder of your fsaverage subject folder
     aparc_file = os.path.join(subjects_dir,
                           subject_id, "label",
                           hemi + ".500.aparc.annot")
