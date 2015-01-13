@@ -139,6 +139,13 @@ def setup_argparser():
                             action='store_true',
                             help='Only create axial pngs. Default is false - create all 3 axes')
                            
+    # Optional argument: contour
+    #       default: True
+    parser.add_argument('-co', '--contour',
+                            dest='contour',
+                            action='store_true',
+                            help='Add a contour line around the overlay file. Default is false.')
+                           
     arguments = parser.parse_args()
     
     return arguments, parser
@@ -330,9 +337,10 @@ def make_png(bg_slice, overlay_slice,
                         vmin = 0,
                         vmax = 1)
                
-    # Add a black line around the edge of the background image
-    # it makes the brain look nicer :)
-    CS = plt.contour(overlay_slice, [0.01, 1], linewidths=3, colors='k')
+    if arguments.contour:
+        # Add a black line around the edge of the background image
+        # it makes the brain look nicer :)
+        CS = plt.contour(overlay_slice, [0.01, 1], linewidths=3, colors='k')
          
     # Put a little "R" in the middle right side of the image 
     # if you're making axial slices

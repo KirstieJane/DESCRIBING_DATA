@@ -113,6 +113,9 @@ def create_stats_dict(df, group_var, continuous_measures=None, discrete_measures
             
             key = '_'.join([measure, 'perc50'])
             stats_dict[key] = grouped[measure].quantile(0.5).values[:] 
+
+            key = '_'.join([measure, 'median'])
+            stats_dict[key] = grouped[measure].quantile(0.5).values[:] 
             
             key = '_'.join([measure, 'perc75'])
             stats_dict[key] = grouped[measure].quantile(0.75).values[:] 

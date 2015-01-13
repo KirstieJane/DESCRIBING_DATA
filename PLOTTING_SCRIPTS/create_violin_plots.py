@@ -21,8 +21,8 @@ def violin_plot(ax, values_list, measure_name, group_names, fontsize, color='blu
     font = { 'size'   : fontsize}
     plt.rc('font', **font)
 
-
     max_value = np.max(np.concatenate(values_list))
+    min_value = np.min(np.concatenate(values_list))
     
     vp = sm.graphics.violinplot(values_list,
                             ax = ax,
@@ -32,7 +32,6 @@ def violin_plot(ax, values_list, measure_name, group_names, fontsize, color='blu
                                           'cutoff': True,
                                           'cutoff_val': max_value,
                                           'cutoff_type': 'abs'})
-    
     
     # Now plot the boxplot on top
     bp = plt.boxplot(values_list, sym='x')
@@ -48,18 +47,15 @@ def violin_plot(ax, values_list, measure_name, group_names, fontsize, color='blu
     # Add the y label
     plt.ylabel(measure_name, fontsize=fontsize)
     
-    # And now turn off the major ticks on the y-axix
+    # And now turn off the major ticks on the y-axis
     for t in ax.yaxis.get_major_ticks(): 
         t.tick1On = False 
         t.tick2On = False
 
-    # Set the y axis limits and calculate the difference
-    ymin, ymax = plt.ylim()
-
     return ax
 
 #=============================================================================
-def create_violin_plots(df_list, measures_list, measures_names, height, group_names, color='blue', ttest=False, layout='one_row'):
+def create_violin_plots(df_list, measures_list, measures_names, height, group_names, color='blue', ttest=False, layout='one_row', paired=False, given_ymin=False, given_ymax=False):
     
     # IMPORTS
     import matplotlib.pylab as plt
@@ -86,7 +82,16 @@ def create_violin_plots(df_list, measures_list, measures_names, height, group_na
         # Finally, if you want to add the t-test statistic
         # then go ahead and do so!
         if ttest:
-            ax = add_ttest(ax, df_list, measure)
+            ax = add_ttest(ax, df_list, measure, paired=paired)
+
+        # Set the y axis limits if given
+        ymin, ymax = plt.ylim()
+        if given_ymin and given_ymax:
+            plt.ylim(given_ymin, given_ymax)
+        if given_ymin and not given_ymax:
+            plt.ylim(given_ymin, ymax)
+        if not given_ymin and given_ymax:
+            plt.ylim(ymin, given_ymax)
 
     # Make sure the layout looks good :)        
     fig.tight_layout()
@@ -95,7 +100,7 @@ def create_violin_plots(df_list, measures_list, measures_names, height, group_na
 
 
 #=============================================================================
-def calc_ttest_dict(a, b):
+def calc_ttest_dict(a, b, paired=False):
     '''
     Calculate the comparison between the two sets of data
     
@@ -105,7 +110,7 @@ def calc_ttest_dict(a, b):
     '''
     # Import what you need
     import numpy as np
-    from scipy.stats import ttest_ind, bartlett, mannwhitneyu, normaltest
+    from scipy.stats import ttest_ind, ttest_rel, bartlett, mannwhitneyu, normaltest, wilcoxon
     
     stats_dict = {}
     
@@ -113,6 +118,9 @@ def calc_ttest_dict(a, b):
     a = [ x for x in a if not np.isnan(x) ]
     b = [ x for x in b if not np.isnan(x) ]
 
+    # Save number of people in each group
+    stats_dict['n'] = (len(a), len(b))
+    
     # Conduct test for equal variance
     stats_dict['eqvar'] = bartlett(a, b)
     
@@ -122,8 +130,10 @@ def calc_ttest_dict(a, b):
     # When you test for equal means (ttest) you have different options
     # depending on if you have equal variances or not. You can also
     # run the non-parametric Mann Whitney U test
+    # Alternatively these data may be paired so there's also the
+    # paired t-test and the Wilcoxon signed rank test
     
-    # All three will be entered in the stats_dict
+    # All five will be entered in the stats_dict
     
     # Conduct Welch's t-test (unequal variances)
     stats_dict['ttest_uneqvar'] = ttest_ind(a, b, equal_var = False)
@@ -134,31 +144,135 @@ def calc_ttest_dict(a, b):
     # Conduct mann whitney U test (non-parametric test of medians)
     stats_dict['mannwhitneyu'] = mannwhitneyu(a, b)
     
+    if paired:
+        # Conduct the paired student's t-test
+        stats_dict['ttest_paired'] = ttest_rel(a, b)
+    
+        # Conduct Wilcoxon signed rank test (non-parametric *paired* test of medians)
+        stats_dict['wilcoxon'] = wilcoxon(a, b)
+
+    # Save in the stats dict the various other measures you might
+    # want to report
+    stats_dict['medians'] = [np.percentile(a, 50), np.percentile(b, 50)]
+    stats_dict['percentile25'] = [np.percentile(a, 25), np.percentile(b, 25)]
+    stats_dict['percentile75'] = [np.percentile(a, 75), np.percentile(b, 75)]
+    stats_dict['means'] = [np.mean(a), np.mean(b)]
+    stats_dict['stds'] = [np.std(a), np.std(b)]
+    stats_dict['dfs'] = [(np.float(stats_dict['n'][0])-1), (np.float(stats_dict['n'][1])-1)]
+    stats_dict['pooled_std'] = np.sqrt( (np.float(stats_dict['dfs'][0])*(np.float(stats_dict['stds'][0])**2)
+                                     + np.float(stats_dict['dfs'][1])*(np.float(stats_dict['stds'][0])**2))
+                                     / (np.float(stats_dict['dfs'][0]) + np.float(stats_dict['dfs'][1])))
+    
+    if paired:
+        stats_dict['mean_difference'] = np.mean(np.array(b)-np.array(a))
+        stats_dict['std_difference'] = np.std(np.array(b)-np.array(a))
+        stats_dict['median_difference'] = np.percentile(np.array(b)-np.array(a), 50) 
+        stats_dict['percentile25_difference'] = np.percentile(np.array(b)-np.array(a), 25) 
+        stats_dict['percentile75_difference'] = np.percentile(np.array(b)-np.array(a), 75)
+        stats_dict['cohens_d'] = np.float(stats_dict['mean_difference']) / np.float(stats_dict['pooled_std'])
+        stats_dict['cohens_d_paired'] = np.float(stats_dict['mean_difference']) / np.float(stats_dict['std_difference'])
+
     return stats_dict
-    
-    
+
 #=============================================================================
-def figure_out_test_stat(stats_dict):
+def report_stats_dict(stats_dict, paired=False):
+    import numpy as np
+    
+    if paired:
+        if stats_dict['normal'][1] < 0.05:
+            print "Not normally distributed data, testing medians"
+            print "    Medians: {:2.4f}, {:2.4f}".format(np.float(stats_dict['medians'][0]),
+                                                            np.float(stats_dict['medians'][1]))
+            print "    IQRs: {:2.4f} to {:2.4f}, {:2.4f} to {:2.4f}".format(np.float(stats_dict['percentile25'][0]),
+                                                                                np.float(stats_dict['percentile75'][0]),
+                                                                                np.float(stats_dict['percentile25'][1]),
+                                                                                np.float(stats_dict['percentile75'][1]))
+            print "    Median difference: {:2.4f}".format(np.float(stats_dict['median_difference']))
+            print "    IQR difference: {:2.4f} to {:2.4f}".format(np.float(stats_dict['percentile25_difference']),
+                                                                                np.float(stats_dict['percentile75_difference']))
+            
+            print "    Wilcoxon W: {:2.4f}, p = {:2.4f}".format(np.float(stats_dict['wilcoxon'][0]),
+                                                                    np.float(stats_dict['wilcoxon'][1]))
+                                                                    
+        else:
+            print "Normally distributed and groups have equal variance"
+            print "    Means: {:2.4f}, {:2.4f}".format(np.float(stats_dict['means'][0]),
+                                                            np.float(stats_dict['means'][1]))
+            print "    St devs: {:2.4f}, {:2.4f}".format(np.float(stats_dict['stds'][0]),
+                                                            np.float(stats_dict['stds'][1]))
+            print "    Mean difference: {:2.4f}".format(np.float(stats_dict['mean_difference']))
+            print "    St dev difference: {:2.4f}".format(np.float(stats_dict['std_difference']))
+            print "    Paired student's t : {:2.4f}, p = {:2.4f}".format(np.float(stats_dict['ttest_paired'][0]),
+                                                                    np.float(stats_dict['ttest_paired'][1]))
+            print "    Cohen's d: {:2.4f}".format(np.float(stats_dict['cohens_d']))
+
+    else:
+    
+        if stats_dict['normal'][1] < 0.05:
+            print "Not normally distributed data, testing medians"
+            print "    Medians: {:2.4f}, {:2.4f}".format(np.float(stats_dict['medians'][0]),
+                                                            np.float(stats_dict['medians'][1]))
+            print "    IQRs: {:2.4f} to {:2.4f}, {:2.4f} to {:2.4f}".format(np.float(stats_dict['percentile25'][0]),
+                                                                                np.float(stats_dict['percentile75'][0]),
+                                                                                np.float(stats_dict['percentile25'][1]),
+                                                                                np.float(stats_dict['percentile75'][1]))
+            print "    Mann-Whitney U: {:2.4f}, p = {:2.4f}".format(np.float(stats_dict['mannwhitneyu'][0]),
+                                                                    np.float(stats_dict['mannwhitneyu'][1]))
+                                                                
+
+        elif stats_dict['eqvar'][1] < 0.05:
+            print "Normally distributed but groups don't have equal varience"
+            print "    Means: {:2.4f}, {:2.4f}".format(np.float(stats_dict['means'][0]),
+                                                            np.float(stats_dict['means'][1]))
+            print "    St devs: {:2.4f}, {:2.4f}".format(np.float(stats_dict['stds'][0]),
+                                                            np.float(stats_dict['stds'][1]))
+
+            print "    Welch's t: {:2.4f}, p = {:2.4f}".format(np.float(stats_dict['ttest_uneqvar'][0]),
+                                                                    np.float(stats_dict['ttest_uneqvar'][1]))
+            print "    Cohen's d: {:2.4f}".format(np.float(stats_dict['cohens_d']))
+                                                                    
+        else:
+            print "Normally distributed and groups have equal varience"
+            print "    Means: {:2.4f}, {:2.4f}".format(np.float(stats_dict['means'][0]),
+                                                            np.float(stats_dict['means'][1]))
+            print "    St devs: {:2.4f}, {:2.4f}".format(np.float(stats_dict['stds'][0]),
+                                                            np.float(stats_dict['stds'][1]))
+            print "    Student's t : {:2.4f}, p = {:2.4f}".format(np.float(stats_dict['ttest_eqvar'][0]),
+                                                                    np.float(stats_dict['ttest_eqvar'][1]))
+            print "    Cohen's d: {:2.4f}".format(np.float(stats_dict['cohens_d']))
+
+
+#=============================================================================
+def figure_out_test_stat(stats_dict, paired=False):
     '''
     A snazzy little function to figure out from a stats_dict
     which is the right p value to use for the violin plot
     '''
-    if stats_dict['normal'][1] > 0.05:
-        if stats_dict['eqvar'][1] > 0.05:
-            test_p = stats_dict['ttest_eqvar'][1]
-            test_name = "Student's t"
+    if paired:
+        if stats_dict['normal'][1] > 0.05:
+            test_p = stats_dict['ttest_paired'][1]
+            test_name = "Paired t-test"
         else:
-            test_p = stats_dict['ttest_uneqvar'][1]
-            test_name = "Welch's t"
+            test_p = stats_dict['wilcoxon'][1]
+            test_name = "Wilcoxon T"
+    
     else:
-        test_p = stats_dict['mannwhitneyu'][1]*2 # Multiply by 2 to get 2 tailed test
-        test_name = "Mann Whitney U"
+        if stats_dict['normal'][1] > 0.05:
+            if stats_dict['eqvar'][1] > 0.05:
+                test_p = stats_dict['ttest_eqvar'][1]
+                test_name = "Student's t"
+            else:
+                test_p = stats_dict['ttest_uneqvar'][1]
+                test_name = "Welch's t"
+        else:
+            test_p = stats_dict['mannwhitneyu'][1]*2 # Multiply by 2 to get 2 tailed test
+            test_name = "Mann Whitney U"
 
     return test_p, test_name
 
 
 #=============================================================================
-def add_ttest(ax, df_list, measure):
+def add_ttest(ax, df_list, measure, paired=False):
     '''
     This section of code plots a line between two of the measures
     and also assigns ns, *, ** or *** according to the two tailed
@@ -206,8 +320,8 @@ def add_ttest(ax, df_list, measure):
         counter+=1
                 
         # Calculate the test statistics and choose the correct one
-        stats_dict = calc_ttest_dict(df_list[a][measure].values[:], df_list[b][measure].values[:])
-        p, test_name = figure_out_test_stat(stats_dict)
+        stats_dict = calc_ttest_dict(df_list[a][measure].values[:], df_list[b][measure].values[:], paired=paired)
+        p, test_name = figure_out_test_stat(stats_dict, paired=paired)
                         
         # Figure out the text you're going to put on the plot
         star = 'ns'
@@ -269,7 +383,7 @@ def get_fig(height, n, layout='one_large_three_small'):
             ax = plt.subplot2grid((1,n), (0,i))
             ax_list.append(ax)
     
-        fontsizes = [ 15, 15, 15, 15 ] # Marker sizes
+        fontsizes = [ 15, 15, 15, 15, 15, 15, 15, 15 ] # Marker sizes
          
          
     if layout == 'just_one':
