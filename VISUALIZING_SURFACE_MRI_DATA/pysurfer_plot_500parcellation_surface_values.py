@@ -34,7 +34,7 @@ def setup_argparser():
     Aso allows you to change some settings
     '''
     # Build a basic parser.
-    help_text = ('Plot values on a freesurfer surface')
+    help_text = ('Plot a single value for each region in the NSPN 500 parcellation a fsaverage surface')
     
     sign_off = 'Author: Kirstie Whitaker <kw401@cam.ac.uk>'
     
@@ -237,8 +237,6 @@ else:
     
 hemi_list = [ "lh", "rh" ]
 views_list = [ 'medial', 'lateral' ]
-
-seg = '500cortConsec'
 
 # Check that the inputs exist:
 if not os.path.isfile(roi_data_file):
