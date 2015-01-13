@@ -241,9 +241,10 @@ views_list = [ 'medial', 'lateral' ]
 seg = '500cortConsec'
 
 # Check that the inputs exist:
-if not os.path.isdir(roi_data_file):
+if not os.path.isfile(roi_data_file):
     print "Roi data file doesn't exist"
     sys.exit()
+    
 if not os.path.isdir(os.path.join(subjects_dir, subject_id, "surf")):
     print "Fsaverage directory doesn't exist"
     print "Check subjects_dir and subject_id"
@@ -252,13 +253,16 @@ if not os.path.isdir(os.path.join(subjects_dir, subject_id, "surf")):
 #=============================================================================
 # READ IN THE MEASURE DATA
 #=============================================================================
-# Read in the data and match it up with the names
+# Read in the data
 df = pd.read_csv(roi_data_file, index_col=False, header=None)
+
+# Set l and u so that they're the same for both hemispheres
+l, u = calc_range(df[0], l, u, thresh, center)
+
+# Now rearrange the data frame and match it up with 
+# the aparc names
 df = df.T
 df.columns = aparc_names
-
-# Set l and u
-l, u = calc_range(roi_data_file, l, u, thresh, center)
 
 # Now make your pictures
 for hemi, surface in it.product(hemi_list, surface_list):
@@ -275,7 +279,7 @@ for hemi, surface in it.product(hemi_list, surface_list):
     labels, ctab, names = nib.freesurfer.read_annot(aparc_file)
 
     # Create an empty roi_data array
-    roi_data = np.ones(len(names))*thresh
+    roi_data = np.ones(len(names))*(thresh-1.0)
 
     # Loop through the names and if they are in the data frame
     # for this hemisphere then add that value to the roi_data array
@@ -292,7 +296,7 @@ for hemi, surface in it.product(hemi_list, surface_list):
     plot_surface(vtx_data, subject_id, hemi,
                      surface, subjects_dir, 
                      output_dir, prefix,
-                     l, u, cmap, center,
+                     l, u, cmap,
                      thresh)
 
 #============================================================================= 
