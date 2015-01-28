@@ -132,20 +132,6 @@ def setup_argparser():
                             action='store_true',
                             help='Make background transparent. Default is black')
     
-    # Optional argument: axial
-    #       default: False
-    parser.add_argument('-ax', '--axial_only',
-                            dest='axial',
-                            action='store_true',
-                            help='Only create axial pngs. Default is false - create all 3 axes')
-                           
-    # Optional argument: contour
-    #       default: True
-    parser.add_argument('-co', '--contour',
-                            dest='contour',
-                            action='store_true',
-                            help='Add a contour line around the overlay file. Default is false.')
-                           
     arguments = parser.parse_args()
     
     return arguments, parser
@@ -244,19 +230,7 @@ def crop_data(bg, overlay):
     
     bg_cropped = bg_cropped[ :, :, slices_list_z ]
     overlay_cropped = overlay_cropped[ :, :, slices_list_z ]
-    
-    #---------------------------------------------------------------
-    # Pad with zeros for 5 slices on all sides if you're going
-    # to get all the slices in the background image
-    bg_cropped = np.pad(bg_cropped, 5, mode='constant')
-    overlay_cropped = np.pad(overlay_cropped, 5, mode='wrap')
-    
-    # Add these slices into the slices_list
-    for i, sl in enumerate(slices_list):
-        sl = sl + [ n - 5 for n in sl ]
-        sl = sl + [ n + 5 for n in sl ]
-        slices_list[i] = list(set(sl))
-    
+        
     return bg_cropped, overlay_cropped, slices_list
 
 def overlay_only(overlay, slices_list):
@@ -335,12 +309,12 @@ def make_png(bg_slice, overlay_slice,
                         interpolation='none',
                         cmap=arguments.colormap2,
                         vmin = 0,
-                        vmax = 1)
+                        vmax = 1,
+                        alpha = 0.2)
                
-    if arguments.contour:
-        # Add a black line around the edge of the background image
-        # it makes the brain look nicer :)
-        CS = plt.contour(overlay_slice, [0.01, 1], linewidths=3, colors='k')
+    # Add a black line around the edge of the background image
+    # it makes the brain look nicer :)
+    #CS = plt.contour(bg_slice, [0.06, 1], linewidths=3, colors='k')
          
     # Put a little "R" in the middle right side of the image 
     # if you're making axial slices
@@ -388,14 +362,8 @@ else:
     bg_cropped, overlay_cropped, slices_list = crop_data(bg, overlay)
                                               # Crop data (but keep slice_ids)
     
-# Figure out which axes to make pngs of
-if arguments.axial:
-    axes_range = range(2,3)
-else:
-    axes_range = range(3)
-    
-# Loop through the axes
-for axis_id in axes_range:
+# Loop through the three axes
+for axis_id in range(3):  
     
     axis_name = xyz_dict['name'][axis_id] # Get the name of the axis
     print axis_name.capitalize()          # and print to screen
@@ -404,7 +372,7 @@ for axis_id in axes_range:
     
     bg, overlay, slices_list = rotate_data(bg_cropped, # Rotate the data so your
                                     overlay_cropped,   # axis of interest is last 
-                                    slices_list,       # and the slices look good
+                                    slices_list,     # and the slices look good
                                     axis_name,
                                     shape)
     
@@ -416,9 +384,9 @@ for axis_id in axes_range:
         if arguments.crop_option == 'overlay':
             if np.sum(overlay[:,:,slice_id]) > 0:
         
-                make_png(bg[:,:,slice_id],         # Make the image ONLY from slices
+                make_png(bg[:,:,slice_id],       # Make the image ONLY from slices
                             overlay[:,:,slice_id], # that have overlay data and save 
-                            axis_name,             # in output_directory
+                            axis_name,           # in output_directory
                             png_name,
                             arguments)
         else:
