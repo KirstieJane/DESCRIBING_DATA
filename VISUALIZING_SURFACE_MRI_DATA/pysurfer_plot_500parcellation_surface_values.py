@@ -125,13 +125,25 @@ def plot_surface(vtx_data, subject_id, hemi, surface, subjects_dir, output_dir, 
                                    height=665,
                                    width=800))
 
-    # Add your data to the brain
-    brain.add_data(vtx_data,
-                    l, 
-                    u,
-                    thresh = thresh,
-                    colormap=cmap,
-                    alpha=.8)
+    # Create an empty brain if the values are all below threshold
+    if np.max(vtx_data) < thresh:
+        # Add your data to the brain
+        brain.add_data(vtx_data*0,
+                        l, 
+                        u,
+                        thresh = thresh,
+                        colormap=cmap,
+                        alpha=0.0)
+    
+    # Otherwise, add the data appropriately!
+    else:
+        # Add your data to the brain
+        brain.add_data(vtx_data,
+                        l, 
+                        u,
+                        thresh = thresh,
+                        colormap=cmap,
+                        alpha=.8)
     
     # Save the images for medial and lateral
     # putting a color bar on all of them
