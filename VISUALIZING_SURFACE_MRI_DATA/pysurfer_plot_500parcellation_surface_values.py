@@ -290,7 +290,7 @@ df = pd.read_csv(roi_data_file, index_col=False, header=None)
 if color_file:
     cmap = [line.strip() for line in open(color_file)]
     l = 1
-    u = len(colors)
+    u = len(cmap)
 else:
     # Set l and u so that they're the same for both hemispheres
     l, u = calc_range(df[0], l, u, thresh, center)
