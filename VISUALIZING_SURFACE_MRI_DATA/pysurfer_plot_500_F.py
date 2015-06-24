@@ -36,7 +36,7 @@ def setup_argparser():
     Aso allows you to change some settings
     '''
     # Build a basic parser.
-    help_text = ('Plot a single value for each region in the NSPN 500 parcellation a fsaverage surface')
+    help_text = ('Plot values on a freesurfer surface')
     
     sign_off = 'Author: Kirstie Whitaker <kw401@cam.ac.uk>'
     
@@ -65,13 +65,13 @@ def setup_argparser():
                             metavar='cmap',
                             help='colormap',
                             default='RdBu_r')
-                            
+###
     parser.add_argument('-cf', '--color_file',
                             type=str,
                             metavar='color_file',
                             help='file containing list of custom colors',
                             default=None)                     
-                            
+###
     parser.add_argument('--center',
                             action='store_true',
                             help='center the color bar around 0')
@@ -106,6 +106,7 @@ def setup_argparser():
     return arguments, parser
 
 #------------------------------------------------------------------------------
+###
 def calc_range(roi_data, l, u, thresh, center):
     # Figure out the min and max for the color bar
     if l == None:
@@ -114,16 +115,18 @@ def calc_range(roi_data, l, u, thresh, center):
     if u == None:
         u = roi_data[roi_data>thresh].max()
         u = np.ceil(u*20)/20.0
-    
+ 
     if center:
         # Make sure the colorbar is centered
         if l**2 < u **2:
             l = u*-1
         else:
             u = l*-1
-    
+
     return l, u
-    
+
+# could add if cmap = "custom", then l = min(data), u = max(data)    
+
 #------------------------------------------------------------------------------
 def plot_surface(vtx_data, subject_id, hemi, surface, subjects_dir, output_dir, prefix, l, u, cmap, thresh):
     """
@@ -136,6 +139,7 @@ def plot_surface(vtx_data, subject_id, hemi, surface, subjects_dir, output_dir, 
 	    If you pass a **list** of colors then you'll
 	      just loop through those colors instead. 
     """
+    
     # Open up a brain in pysurfer
     brain = Brain(subject_id, hemi, surface,
                   subjects_dir = subjects_dir,
@@ -143,26 +147,13 @@ def plot_surface(vtx_data, subject_id, hemi, surface, subjects_dir, output_dir, 
                                    height=665,
                                    width=800))
 
-    # Create an empty brain if the values are all below threshold
-    if np.max(vtx_data) < thresh:
-        # Add your data to the brain
-        brain.add_data(vtx_data*0,
-                        l, 
-                        u,
-                        thresh = thresh,
-                        colormap=cmap,
-                        alpha=0.0)
-    
-    # Otherwise, add the data appropriately!
-    else:
-        # Add your data to the brain
-        brain.add_data(vtx_data,
-                        l, 
-                        u,
-                        thresh = thresh,
-                        colormap=cmap,
-                        alpha=.8)
-    
+    # Add your data to the brain
+    brain.add_data(vtx_data,
+                l, 
+                u,
+                thresh = thresh,
+                colormap=cmap,
+                alpha=.8)
     # Save the images for medial and lateral
     # putting a color bar on all of them
     brain.save_imageset(prefix = os.path.join(output_dir, prefix),
@@ -269,6 +260,8 @@ else:
 hemi_list = [ "lh", "rh" ]
 views_list = [ 'medial', 'lateral' ]
 
+seg = '500cortConsec'
+
 # Check that the inputs exist:
 if not os.path.isfile(roi_data_file):
     print "Roi data file doesn't exist"
@@ -288,7 +281,7 @@ df = pd.read_csv(roi_data_file, index_col=False, header=None)
 #-------
 # Make custom colorbar
 if color_file:
-    cmap = [line.strip() for line in open(color_file)]
+    colors = [line.strip() for line in open(color_file)]
     l = 1
     u = len(colors)
 else:
@@ -329,11 +322,20 @@ for hemi, surface in it.product(hemi_list, surface_list):
     vtx_data = roi_data[labels]
     
     # Show this data on a brain
-    plot_surface(vtx_data, subject_id, hemi,
+    if colors:
+        plot_surface(vtx_data, subject_id, hemi,
+                     surface, subjects_dir, 
+                     output_dir, prefix,
+                     l, u, colors,
+                     thresh)
+		     
+    else:
+        plot_surface(vtx_data, subject_id, hemi,
                      surface, subjects_dir, 
                      output_dir, prefix,
                      l, u, cmap,
                      thresh)
+		     
 
 #============================================================================= 
 # COMBINE THE IMAGES

@@ -68,6 +68,12 @@ def setup_argparser():
                             help='colormap',
                             default='RdBu_r')
                             
+    parser.add_argument('-cf', '--color_file',
+                            type=str,
+                            metavar='color_file',
+                            help='file containing list of custom colors',
+                            default=None)                     
+
     parser.add_argument('--center',
                             action='store_true',
                             help='center the color bar around 0')
@@ -168,14 +174,26 @@ def plot_surface(vtx_data, subject_id, subjects_dir, hemi, surface, output_dir, 
             l = u*-1
         else:
             u = l*-1
+            
+    # Create an empty brain if the values are all below threshold
+    if np.max(vtx_data) < thresh:
+        # Add your data to the brain
+        brain.add_data(vtx_data*0,
+                        l, 
+                        u,
+                        thresh = thresh,
+                        colormap=cmap,
+                        alpha=0.0)
     
-    # Add your data to the brain
-    brain.add_data(vtx_data,
-                    l, 
-                    u,
-                    thresh = thresh,
-                    colormap=cmap,
-                    alpha=.8)
+    # Otherwise, add the data appropriately!
+    else:
+        # Add your data to the brain
+        brain.add_data(vtx_data,
+                        l, 
+                        u,
+                        thresh = thresh,
+                        colormap=cmap,
+                        alpha=.8)
     
     # Save the images for medial and lateral
     # putting a color bar on all of them
@@ -244,6 +262,7 @@ subjects_dir = arguments.subjects_dir
 l = arguments.lower
 u = arguments.upper
 cmap = arguments.cmap
+color_file = arguments.color_file
 center = arguments.center
 surface = arguments.surface
 thresh = arguments.thresh
@@ -303,6 +322,12 @@ for hemi in hemi_list:
 # Calculate the lower and upper values if they haven't been defined:
 l, u = calc_range(vtx_data_dict['lh'], vtx_data_dict['rh'], thresh, l, u)
 
+# Unless there's a given color file
+if color_file:
+    colors = [line.strip() for line in open(color_file)]
+    l = 1
+    u = len(colors)
+
 #============================================================================= 
 # MAKE THE INDIVIDUAL PICTURES
 #============================================================================= 
@@ -311,12 +336,19 @@ for hemi, surface in it.product(hemi_list, surface_list):
     prefix = '_'.join([hemi, surface])
     
     # Show this data on a brain
-    plot_surface(vtx_data_dict[hemi], subject_id, subjects_dir,
+    if colors:
+        plot_surface(vtx_data_dict[hemi], subject_id, subjects_dir,
+                     hemi, surface, 
+                     output_dir, prefix,
+                     l, u, colors, center,
+                     thresh)
+    else:
+        plot_surface(vtx_data_dict[hemi], subject_id, subjects_dir,
                      hemi, surface, 
                      output_dir, prefix,
                      l, u, cmap, center,
                      thresh)
-
+                         
 #============================================================================= 
 # COMBINE THE IMAGES
 #============================================================================= 
