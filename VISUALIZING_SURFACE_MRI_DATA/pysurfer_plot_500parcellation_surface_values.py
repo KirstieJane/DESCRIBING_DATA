@@ -101,6 +101,12 @@ def setup_argparser():
                             help='surface - one of "pial", "inflated" or "both"',
                             default='both')
                             
+    parser.add_argument('-cst', '--cortex_style',
+                            type=str,
+                            metavar='cortex_style',
+                            help='cortex style - one of "classic", "bone", "high_contrast" or "low_contrast"',
+                            default='classic')
+                            
     arguments = parser.parse_args()
     
     return arguments, parser
@@ -125,7 +131,7 @@ def calc_range(roi_data, l, u, thresh, center):
     return l, u
     
 #------------------------------------------------------------------------------
-def plot_surface(vtx_data, subject_id, hemi, surface, subjects_dir, output_dir, prefix, l, u, cmap, thresh):
+def plot_surface(vtx_data, subject_id, hemi, surface, subjects_dir, output_dir, prefix, l, u, cmap, thresh, cortex_style=cortex_style):
     """
     This function needs more documentation, but for now
     it is sufficient to know this one important fact:
@@ -141,7 +147,8 @@ def plot_surface(vtx_data, subject_id, hemi, surface, subjects_dir, output_dir, 
                   subjects_dir = subjects_dir,
                   config_opts=dict(background="white",
                                    height=665,
-                                   width=800))
+                                   width=800,
+                                   cortex=cortex_style))
 
     # Create an empty brain if the values are all below threshold
     if np.max(vtx_data) < thresh:
@@ -233,6 +240,7 @@ color_file = arguments.color_file
 center = arguments.center
 surface = arguments.surface
 thresh = arguments.thresh
+cortex_style = arguments.cortex_style
 
 # Define the output directory
 output_dir = os.path.join(os.path.dirname(roi_data_file), 'PNGS')
@@ -333,7 +341,8 @@ for hemi, surface in it.product(hemi_list, surface_list):
                      surface, subjects_dir, 
                      output_dir, prefix,
                      l, u, cmap,
-                     thresh)
+                     thresh,
+                     cortex_style=cortex_style)
 
 #============================================================================= 
 # COMBINE THE IMAGES
