@@ -131,7 +131,7 @@ def calc_range(roi_data, l, u, thresh, center):
     return l, u
     
 #------------------------------------------------------------------------------
-def plot_surface(vtx_data, subject_id, hemi, surface, subjects_dir, output_dir, prefix, l, u, cmap, thresh, cortex_style=cortex_style):
+def plot_surface(vtx_data, subject_id, hemi, surface, subjects_dir, output_dir, prefix, l, u, cmap, thresh, cortex_style='classic'):
     """
     This function needs more documentation, but for now
     it is sufficient to know this one important fact:
