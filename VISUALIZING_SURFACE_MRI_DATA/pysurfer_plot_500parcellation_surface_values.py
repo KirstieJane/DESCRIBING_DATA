@@ -177,7 +177,7 @@ def plot_surface(vtx_data, subject_id, hemi, surface, subjects_dir, output_dir, 
                         colorbar = range(len(views_list)) )
 
 #----------------------------------------------------------------------------- 
-def combine_pngs(measure, surface, output_dir):
+def combine_pngs(measure, surface, output_dir, cortex_style):
     '''
     Find four images and combine them into one nice picture
     '''
@@ -187,10 +187,10 @@ def combine_pngs(measure, surface, output_dir):
     grid = gridspec.GridSpec(2, 2)
     grid.update(left=0, right=1, top=1, bottom = 0.08, wspace=0, hspace=0)
 
-    f_list = [ '_'.join([os.path.join(output_dir, measure), 'lh', surface, 'lateral.png']),
-               '_'.join([os.path.join(output_dir, measure), 'rh', surface, 'lateral.png']),
-               '_'.join([os.path.join(output_dir, measure), 'lh', surface, 'medial.png']),
-               '_'.join([os.path.join(output_dir, measure), 'rh', surface, 'medial.png']) ]
+    f_list = [ '_'.join([os.path.join(output_dir, measure), 'lh', surface, cortex_style, 'lateral.png']),
+               '_'.join([os.path.join(output_dir, measure), 'rh', surface, cortex_style, 'lateral.png']),
+               '_'.join([os.path.join(output_dir, measure), 'lh', surface, cortex_style, 'medial.png']),
+               '_'.join([os.path.join(output_dir, measure), 'rh', surface, cortex_style, 'medial.png']) ]
 
     # Plot each figure in turn
     for g_loc, f in zip(grid, f_list):
@@ -219,7 +219,7 @@ def combine_pngs(measure, surface, output_dir):
     ax.set_axis_off()
     
     # Save the figure
-    filename = os.path.join(output_dir, '{}_{}_combined.png'.format(measure, surface))
+    filename = os.path.join(output_dir, '{}_{}_{}_combined.png'.format(measure, surface, cortex_style))
     print filename
     fig.savefig(filename, bbox_inches=0, dpi=300)
 
@@ -348,4 +348,4 @@ for hemi, surface in it.product(hemi_list, surface_list):
 # COMBINE THE IMAGES
 #============================================================================= 
 for surface in surface_list:
-    combine_pngs(measure, surface, output_dir)
+    combine_pngs(measure, surface, output_dir, cortex_style)
