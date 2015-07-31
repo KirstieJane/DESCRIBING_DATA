@@ -311,7 +311,7 @@ df.columns = aparc_names
 # Now make your pictures
 for hemi, surface in it.product(hemi_list, surface_list):
 
-    prefix = '_'.join([measure, hemi, surface])
+    prefix = '_'.join([measure, hemi, surface, cortex_style])
     
     # Read in aparc annot file which will be inside
     # the label folder of your fsaverage subject folder
