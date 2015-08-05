@@ -185,7 +185,8 @@ def plot_surface(vtx_data, subject_id, hemi, surface, subjects_dir, output_dir, 
     else:
         # Plot the data twice for the two
         # different settings
-        vtx_data1 = vtx_data[vtx_data>thresh2] = 0
+        vtx_data1 = np.copy(vtx_data)
+        vtx_data1[vtx_data1>thresh2] = 0
         brain.add_data(vtx_data1,
                         l, 
                         u,
