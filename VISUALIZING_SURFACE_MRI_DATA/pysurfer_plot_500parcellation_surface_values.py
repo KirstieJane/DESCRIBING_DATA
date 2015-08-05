@@ -66,6 +66,12 @@ def setup_argparser():
                             help='colormap',
                             default='RdBu_r')
                             
+    parser.add_argument('-c2', '--cmap2',
+                            type=str,
+                            metavar='cmap2',
+                            help='colormap for the second overlay',
+                            default='autumn')
+                            
     parser.add_argument('-cf', '--color_file',
                             type=str,
                             metavar='color_file',
@@ -82,6 +88,12 @@ def setup_argparser():
                             help='mask values below this value',
                             default=-98)
                             
+    parser.add_argument('-t2', '--thresh2',
+                            type=float,
+                            metavar='thresh2',
+                            help='mask values below this value for the second color',
+                            default=None)
+                            
     parser.add_argument('-l', '--lower',
                             type=float,
                             metavar='lowerthr',
@@ -94,7 +106,6 @@ def setup_argparser():
                             help='upper limit for colorbar',
                             default=None)
                             
-    
     parser.add_argument('-s', '--surface',
                             type=str,
                             metavar='surface',
@@ -131,7 +142,7 @@ def calc_range(roi_data, l, u, thresh, center):
     return l, u
     
 #------------------------------------------------------------------------------
-def plot_surface(vtx_data, subject_id, hemi, surface, subjects_dir, output_dir, prefix, l, u, cmap, thresh, cortex_style='classic'):
+def plot_surface(vtx_data, subject_id, hemi, surface, subjects_dir, output_dir, prefix, l, u, cmap, thresh, thresh2=thresh2, cmap2=cmap2, cortex_style='classic'):
     """
     This function needs more documentation, but for now
     it is sufficient to know this one important fact:
@@ -160,8 +171,9 @@ def plot_surface(vtx_data, subject_id, hemi, surface, subjects_dir, output_dir, 
                         colormap=cmap,
                         alpha=0.0)
     
-    # Otherwise, add the data appropriately!
-    else:
+    # If you only have one threshold
+    # then add the data!
+    elif not thresh2:
         # Add your data to the brain
         brain.add_data(vtx_data,
                         l, 
@@ -170,6 +182,24 @@ def plot_surface(vtx_data, subject_id, hemi, surface, subjects_dir, output_dir, 
                         colormap=cmap,
                         alpha=.8)
     
+    else:
+        # Plot the data twice for the two
+        # different settings
+        vtx_data1 = vtx_data[vtx_data>thresh2] = 0
+        brain.add_data(vtx_data1,
+                        l, 
+                        u,
+                        thresh = thresh,
+                        colormap = cmap,
+                        alpha = .8)
+                        
+        brain.add_data(vtx_data,
+                        l, 
+                        u,
+                        thresh = thresh2,
+                        colormap = cmap2,
+                        alpha = .8)
+        
     # Save the images for medial and lateral
     # putting a color bar on all of them
     brain.save_imageset(prefix = os.path.join(output_dir, prefix),
@@ -236,10 +266,12 @@ roi_data_file = arguments.roi_file
 l = arguments.lower
 u = arguments.upper
 cmap = arguments.cmap
+cmap2 = arguments.cmap2
 color_file = arguments.color_file
 center = arguments.center
 surface = arguments.surface
 thresh = arguments.thresh
+thresh2 = arguments.thresh2
 cortex_style = arguments.cortex_style
 
 # Define the output directory
@@ -342,6 +374,8 @@ for hemi, surface in it.product(hemi_list, surface_list):
                      output_dir, prefix,
                      l, u, cmap,
                      thresh,
+                     cmap2=cmap2,
+                     thresh2=thresh2,
                      cortex_style=cortex_style)
 
 #============================================================================= 
