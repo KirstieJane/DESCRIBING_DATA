@@ -333,7 +333,7 @@ def rotate_data(bg, stats, slices_list, axis_name, shape):
         bg = np.rot90(bg)
         stats = np.flipud(np.swapaxes(stats, 0, 2))
         bg = np.flipud(np.swapaxes(bg, 0, 2))
-        slices_list[1] = [ shape - n - 3 for n in slices_list[1] ] 
+        slices_list[1] = [ shape - n for n in slices_list[1] ] 
         
     elif axis_name == 'sagittal':
         stats = np.flipud(np.swapaxes(stats, 0, 2))

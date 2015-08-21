@@ -153,13 +153,20 @@ def plot_surface(vtx_data, subject_id, hemi, surface, subjects_dir, output_dir, 
 	    If you pass a **list** of colors then you'll
 	      just loop through those colors instead. 
     """
+    if cortex_style.count('_') == 2: 
+        cortex_style_list = cortex_style.split('_')
+        cortex_name = cortex_style_list[0]
+        cortex_min = np.float(cortex_style_list[1])
+        cortex_max = np.float(cortex_style_list[2])
+            
+        cortex_style = ( cortex_name, cortex_min, cortex_max, False )
+    
     # Open up a brain in pysurfer
     brain = Brain(subject_id, hemi, surface,
-                  subjects_dir = subjects_dir,
-                  config_opts=dict(background="white",
-                                   height=665,
-                                   width=800,
-                                   cortex=cortex_style))
+                      subjects_dir = subjects_dir,
+                      background="white",
+                      size=(800, 665),
+                      cortex=cortex_style))
 
     # Create an empty brain if the values are all below threshold
     if np.max(vtx_data) < thresh:
