@@ -304,7 +304,7 @@ def crop_data(bg, stats):
     for i, sl in enumerate(slices_list):
         sl = sl + [ n - 5 for n in sl ]
         sl = sl + [ n + 5 for n in sl ]
-        slices_list[i] = list(set(sl))
+        slices_list[i] = sorted(list(set(sl)))
     
     return bg_cropped, stats_cropped, slices_list
 
