@@ -166,7 +166,7 @@ def plot_surface(vtx_data, subject_id, hemi, surface, subjects_dir, output_dir, 
                       subjects_dir = subjects_dir,
                       background="white",
                       size=(800, 665),
-                      cortex=cortex_style))
+                      cortex=cortex_style)
 
     # Create an empty brain if the values are all below threshold
     if np.max(vtx_data) < thresh:
