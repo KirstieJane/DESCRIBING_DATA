@@ -37,63 +37,63 @@ def setup_argparser():
     '''
     # Build a basic parser.
     help_text = ('Plot a single value for each region in the NSPN 500 parcellation a fsaverage surface')
-    
+
     sign_off = 'Author: Kirstie Whitaker <kw401@cam.ac.uk>'
-    
+
     parser = argparse.ArgumentParser(description=help_text, epilog=sign_off)
-    
+
     # Now add the arguments
-    parser.add_argument(dest='roi_file', 
+    parser.add_argument(dest='roi_file',
                             type=str,
                             metavar='roi_file',
                             help='roi file containing list of measure values - one for each region - csv format')
-                            
+
     parser.add_argument('--fsaverageid',
                             type=str,
                             metavar='fsaverage_id',
                             help='FSaverage subject id',
                             default='fsaverageSubP')
-    
+
     parser.add_argument('-sd', '--subjects_dir',
                             type=str,
                             metavar='subjects_dir',
                             help='freesurfer subjects dir',
                             default=os.environ["SUBJECTS_DIR"])
-                                                        
+
     parser.add_argument('-c', '--cmap',
                             type=str,
                             metavar='cmap',
                             help='colormap',
                             default='RdBu_r')
-                            
+
     parser.add_argument('-c2', '--cmap2',
                             type=str,
                             metavar='cmap2',
                             help='colormap for the second overlay',
                             default='autumn')
-                            
+
     parser.add_argument('-cf', '--color_file',
                             type=str,
                             metavar='color_file',
                             help='file containing list of custom colors',
-                            default=None)                     
-                            
+                            default=None)
+
     parser.add_argument('--center',
                             action='store_true',
                             help='center the color bar around 0')
-                            
+
     parser.add_argument('-t', '--thresh',
                             type=float,
                             metavar='thresh',
                             help='mask values below this value',
                             default=-98)
-                            
+
     parser.add_argument('-t2', '--thresh2',
                             type=float,
                             metavar='thresh2',
                             help='mask values below this value for the second color',
                             default=None)
-                            
+
     parser.add_argument('-l', '--lower',
                             type=float,
                             metavar='lowerthr',
@@ -105,21 +105,21 @@ def setup_argparser():
                             metavar='upperthr',
                             help='upper limit for colorbar',
                             default=None)
-                            
+
     parser.add_argument('-s', '--surface',
                             type=str,
                             metavar='surface',
                             help='surface - one of "pial", "inflated" or "both"',
                             default='both')
-                            
+
     parser.add_argument('-cst', '--cortex_style',
                             type=str,
                             metavar='cortex_style',
                             help='cortex style - one of "classic", "bone", "high_contrast" or "low_contrast"',
                             default='classic')
-                            
+
     arguments = parser.parse_args()
-    
+
     return arguments, parser
 
 #------------------------------------------------------------------------------
@@ -131,16 +131,16 @@ def calc_range(roi_data, l, u, thresh, center):
     if u == None:
         u = roi_data[roi_data>thresh].max()
         u = np.ceil(u*20)/20.0
-    
+
     if center:
         # Make sure the colorbar is centered
         if l**2 < u **2:
             l = u*-1
         else:
             u = l*-1
-    
+
     return l, u
-    
+
 #------------------------------------------------------------------------------
 def plot_surface(vtx_data, subject_id, hemi, surface, subjects_dir, output_dir, prefix, l, u, cmap, thresh, thresh2=None, cmap2='autumn', cortex_style='classic'):
     """
@@ -151,16 +151,16 @@ def plot_surface(vtx_data, subject_id, hemi, surface, subjects_dir, output_dir, 
 	      colormap (eg: jet, Rd_Bu etc) then the code
 	      will use that for the color scheme.
 	    If you pass a **list** of colors then you'll
-	      just loop through those colors instead. 
+	      just loop through those colors instead.
     """
-    if cortex_style.count('_') == 2: 
+    if cortex_style.count('_') == 2:
         cortex_style_list = cortex_style.split('_')
         cortex_name = cortex_style_list[0]
         cortex_min = np.float(cortex_style_list[1])
         cortex_max = np.float(cortex_style_list[2])
-            
+
         cortex_style = ( cortex_name, cortex_min, cortex_max, False )
-    
+
     # Open up a brain in pysurfer
     brain = Brain(subject_id, hemi, surface,
                       subjects_dir = subjects_dir,
@@ -172,49 +172,49 @@ def plot_surface(vtx_data, subject_id, hemi, surface, subjects_dir, output_dir, 
     if np.max(vtx_data) < thresh:
         # Add your data to the brain
         brain.add_data(vtx_data*0,
-                        l, 
+                        l,
                         u,
                         thresh = thresh,
                         colormap=cmap,
                         alpha=0.0)
-    
+
     # If you only have one threshold
     # then add the data!
     elif not thresh2:
         # Add your data to the brain
         brain.add_data(vtx_data,
-                        l, 
+                        l,
                         u,
                         thresh = thresh,
                         colormap=cmap,
                         alpha=.8)
-    
+
     else:
         # Plot the data twice for the two
         # different settings
         vtx_data1 = np.copy(vtx_data)
         vtx_data1[vtx_data1>thresh2] = 0
         brain.add_data(vtx_data1,
-                        l, 
+                        l,
                         u,
                         thresh = thresh,
                         colormap = cmap,
                         alpha = .8)
-                        
+
         brain.add_data(vtx_data,
-                        l, 
+                        l,
                         u,
                         thresh = thresh2,
                         colormap = cmap2,
                         alpha = .8)
-        
+
     # Save the images for medial and lateral
     # putting a color bar on all of them
     brain.save_imageset(prefix = os.path.join(output_dir, prefix),
-                        views = views_list, 
+                        views = views_list,
                         colorbar = range(len(views_list)) )
 
-#----------------------------------------------------------------------------- 
+#-----------------------------------------------------------------------------
 def combine_pngs(measure, surface, output_dir, cortex_style):
     '''
     Find four images and combine them into one nice picture
@@ -236,7 +236,7 @@ def combine_pngs(measure, surface, output_dir, cortex_style):
         fig.add_subplot(ax)
         img = mpimg.imread(f)
         # Crop the figures appropriately
-        # NOTE: this can change depending on which system you've made the 
+        # NOTE: this can change depending on which system you've made the
         # images on originally - it's a bug that needs to be sorted out!
         if 'lateral' in f:
             img_cropped = img[75:589,55:(-50),:]
@@ -255,7 +255,7 @@ def combine_pngs(measure, surface, output_dir, cortex_style):
     img_cbar = img[600:,:]
     ax.imshow(img_cbar, interpolation='none')
     ax.set_axis_off()
-    
+
     # Save the figure
     filename = os.path.join(output_dir, '{}_{}_{}_combined.png'.format(measure, surface, cortex_style))
     print filename
@@ -296,8 +296,8 @@ measure = os.path.splitext(measure)[0]
 aparc_names_file =  os.path.join(subjects_dir,
                           subject_id, "parcellation",
                           "500.names.txt")
-                          
-# Read in the names from the aparc names file 
+
+# Read in the names from the aparc names file
 # dropping the first 41
 aparc_names = [line.strip() for line in open(aparc_names_file)]
 aparc_names = aparc_names[41::]
@@ -313,7 +313,7 @@ else:
     print "Do not recognise surface. Check {}".format(surface)
     parser.print_help()
     sys.exit()
-    
+
 hemi_list = [ "lh", "rh" ]
 views_list = [ 'medial', 'lateral' ]
 
@@ -321,12 +321,12 @@ views_list = [ 'medial', 'lateral' ]
 if not os.path.isfile(roi_data_file):
     print "Roi data file doesn't exist"
     sys.exit()
-    
+
 if not os.path.isdir(os.path.join(subjects_dir, subject_id, "surf")):
     print "Fsaverage directory doesn't exist"
     print "Check subjects_dir and subject_id"
     sys.exit()
-    
+
 #=============================================================================
 # READ IN THE MEASURE DATA
 #=============================================================================
@@ -339,11 +339,19 @@ if color_file:
     cmap = [line.strip() for line in open(color_file)]
     l = 1
     u = len(cmap)
+
+    # If you've passed rgb values you need to convert
+    # these to tuples
+    if len(cmap[0].split()) == 3:
+        cmap = [ (np.float(x.split()[0]),
+                  np.float(x.split()[1]),
+                  np.float(x.split()[2])) for x in cmap ]
+
 else:
     # Set l and u so that they're the same for both hemispheres
     l, u = calc_range(df[0], l, u, thresh, center)
 
-# Now rearrange the data frame and match it up with 
+# Now rearrange the data frame and match it up with
 # the aparc names
 df = df.T
 df.columns = aparc_names
@@ -352,7 +360,7 @@ df.columns = aparc_names
 for hemi, surface in it.product(hemi_list, surface_list):
 
     prefix = '_'.join([measure, hemi, surface, cortex_style])
-    
+
     # Read in aparc annot file which will be inside
     # the label folder of your fsaverage subject folder
     aparc_file = os.path.join(subjects_dir,
@@ -372,13 +380,16 @@ for hemi, surface in it.product(hemi_list, surface_list):
 
         if roi_name in df.columns:
             roi_data[i] = df[roi_name]
-            
+
     # Make a vector containing the data point at each vertex.
     vtx_data = roi_data[labels]
-    
+
+    # Write out the vtx_data
+    #nib.freesurfer.write_annot(f_name, vtx_data, ctab, names)
+
     # Show this data on a brain
     plot_surface(vtx_data, subject_id, hemi,
-                     surface, subjects_dir, 
+                     surface, subjects_dir,
                      output_dir, prefix,
                      l, u, cmap,
                      thresh,
@@ -386,8 +397,8 @@ for hemi, surface in it.product(hemi_list, surface_list):
                      thresh2=thresh2,
                      cortex_style=cortex_style)
 
-#============================================================================= 
+#=============================================================================
 # COMBINE THE IMAGES
-#============================================================================= 
+#=============================================================================
 for surface in surface_list:
     combine_pngs(measure, surface, output_dir, cortex_style)
